@@ -22,6 +22,10 @@
           <span>AI news</span>
           <span class="switch-tab__dot" id="news-dot" hidden></span>
         </button>
+        <button class="switch-tab" id="view-routines" role="tab" aria-selected="false">
+          <span>Routines</span>
+          <span class="switch-tab__dot" id="routines-dot" hidden></span>
+        </button>
       </div>
 
       <div class="sidebar__view" id="panel-tabs" role="tabpanel">
@@ -31,6 +35,7 @@
           <button class="btn btn--quiet btn--sm" id="btn-close-dupes">Dedupe</button>
         </div>
 
+        <div class="routine-slot" id="routine-offer" hidden></div>
         <div class="hint">Drag a tab onto a folder to save it. Shift-click to grab several at once.</div>
         <div class="tab-list" id="tab-list"></div>
       </div>
@@ -46,6 +51,10 @@
         </div>
         <div class="news__status" id="news-updated"></div>
         <div class="news-list" id="news-list"></div>
+      </div>
+
+      <div class="sidebar__view" id="panel-routines" role="tabpanel" hidden>
+        <div class="routines-scroll" id="routines-body"></div>
       </div>
     </aside>
 

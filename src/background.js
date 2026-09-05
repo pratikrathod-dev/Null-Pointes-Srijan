@@ -1,11 +1,26 @@
-// MV3 service worker. Deliberately thin: it owns no state.
+// MV3 service worker. Deliberately thin: it owns no board state.
 //
 // Service workers have no localStorage and are killed aggressively, so the sync
 // engine lives in the pages instead. This worker only handles the things that
-// must exist outside a page: keyboard commands, first-run, and answering a
-// couple of queries from the popup.
+// must exist outside a page: keyboard commands, first-run, answering a couple
+// of queries from the popup -- and, since 1.9, noting when tabs open and close
+// so learned routines can be spotted even when no board tab is open. That
+// record is device-local (see lib/routines.js) and never touches the board.
+
+import { recordTabLoaded, recordTabClosed } from './lib/routines.js'
 
 const BOARD_URL = chrome.runtime.getURL('src/newtab/newtab.html')
+
+// A tab counts once it has finished loading a real page; routines.js filters
+// out extension pages and chrome:// itself. Failures are swallowed on purpose:
+// a hiccup here must never surface as anything the person can see.
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.status !== 'complete') return
+  recordTabLoaded(tabId, tab).catch(() => {})
+})
+chrome.tabs.onRemoved.addListener((tabId) => {
+  recordTabClosed(tabId).catch(() => {})
+})
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install') chrome.tabs.create({ url: BOARD_URL })

@@ -65,16 +65,48 @@ How it works, and why every story can be trusted:
 3. Anything MiMo returns that cannot be traced back to a fetched story is
    dropped. The link on every card is the publisher's own page.
 
-Set it up in **Settings → MiMo API key** (`sk-…` from platform.xiaomimimo.com,
-or a `tp-…` Token Plan key), then **Save & test**. The key is stored only in
-this browser's local extension storage — never synced, never exported. Results
-are cached for four hours (today) or a day (this week); the refresh button
-forces a new run. Without a key, "Show newest without AI" lists the feeds'
-newest stories unranked.
+It works out of the box: the extension ships with a built-in MiMo key. To use
+your own (`sk-…` from platform.xiaomimimo.com, or a `tp-…` Token Plan key),
+paste it in **Settings → MiMo API key** and **Save & test**; clear the field to
+go back to the built-in one. A pasted key is stored only in this browser's local
+extension storage — never synced, never exported. Results are cached for four
+hours (today) or a day (this week); the refresh button forces a new run.
 
 **MiMo web search** (Settings) lets the model add a story the feeds missed;
 only links the API actually cited are kept. Direct `sk-` keys only, with the
 Web Search plugin enabled in the MiMo console.
+
+---
+
+## Learned routines
+
+Tabspace notices sites you open together — or close together — and offers a
+one-tap version of it. The search starts with the last hour (the same sites
+together three separate times) and widens through 6 hours, 24 hours, 7 days and
+30 days until something repeats; the long windows need the same hour on three
+different days. The offer appears at the top of **Open tabs**, and the whole
+system is on show in the **Routines** view of the sidebar: the live feed of tab
+events as the service worker records them, the window-by-window search, every
+routine with its status, a **Simulate a morning** button that seeds a pretend
+hour and lets the same detector find it (everything it produces is marked
+simulated and can be cleared), and the activity log.
+
+It only ever offers: nothing opens or closes without a confirm dialog, every
+run gets a toast with **Undo** that reverses the browser action, and every
+offer, accept, decline, run and undo is logged with its reason.
+
+How it works:
+
+- The service worker notes when a tab finishes loading a real web page and
+  when it closes (site, title, URL, time). Extension pages and `chrome://` are
+  never recorded. This uses the `tabs` permission the extension already has.
+- The record is device-local (`chrome.storage.local`), kept for 30 days and
+  capped at 3,000 events. It is never synced, never exported, and never enters
+  the board state.
+- Detection is deterministic and runs locally. With a MiMo key the model is
+  asked only to *name* a routine, from site names, tab titles, the hour and the
+  day count — never a URL path or page content.
+- Turn recording off, forget one routine, or forget everything from Settings.
 
 ---
 
@@ -102,7 +134,7 @@ its menu.
 ```
 manifest.json          MV3 manifest
 src/
-  background.js        service worker — commands and first run only, owns no state
+  background.js        service worker — commands, first run, and the tab record for routines
   lib/
     util.js            ids, ordering, favicons, a tiny DOM builder
     model.js           the data shape and every mutation; also import/export
@@ -111,6 +143,7 @@ src/
     supabase-sync.js   email + code sign-in, the recommended backend
     mimo.js            Xiaomi MiMo client; the key lives in local storage only
     news.js            feed fetching, MiMo ranking, and the news cache
+    routines.js        learned routines: tab record, detection, naming, simulation, log
     supabase-config.js the two values you paste in
   newtab/              the board (newtab override)
   sidepanel/           vertical tab strip + saved folders, in Chrome's side panel

@@ -294,12 +294,12 @@ export function mountNewsPanel({ store, toast, openSettings, $, isVisible }) {
 export function mimoSettingRows({ config, settingRow, toggleControl, toast, onKeySaved, onRefresh }) {
   const input = el('input.field.field--key', {
     type: 'password',
-    placeholder: 'sk-… or tp-…',
+    placeholder: 'Built-in key in use — paste your own to override',
     autocomplete: 'off',
     spellcheck: false,
     autocapitalize: 'none',
   })
-  input.value = config.apiKey ?? ''
+  input.value = config.ownKey ? config.apiKey : ''
 
   const reveal = el('button.icon-btn.icon-btn--sm', { type: 'button', title: 'Show key' })
   reveal.append(icon('eye', { size: 15 }))
@@ -318,7 +318,7 @@ export function mimoSettingRows({ config, settingRow, toggleControl, toast, onKe
     try {
       await writeMimoConfig({ apiKey: key })
       if (!key) {
-        toast('MiMo key removed')
+        toast('Using the built-in MiMo key')
       } else {
         const result = await testMimoKey(key)
         if (result.ok) toast(`MiMo key works — ${MIMO_MODEL}${isTokenPlanKey(key) ? ' (Token Plan)' : ''}`)
@@ -336,7 +336,7 @@ export function mimoSettingRows({ config, settingRow, toggleControl, toast, onKe
 
   return [
     settingRow('MiMo API key',
-      `Powers the AI news panel. The key stays on this device — it is never synced, exported, or sent anywhere except Xiaomi's API. Keys starting sk- use the direct API; tp- keys use the Token Plan endpoint. Model: ${MIMO_MODEL}.`,
+      `Tabspace ships with a built-in key, so the AI news and routine naming work out of the box. Paste your own to use it instead; leave the field empty to go back to the built-in one. A pasted key stays on this device — never synced or exported. Model: ${MIMO_MODEL}.`,
       [input, reveal, save]),
 
     settingRow('MiMo web search',

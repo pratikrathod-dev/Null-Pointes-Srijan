@@ -9,6 +9,10 @@ const STORAGE_KEY = 'tabspace.mimo'
 
 export const MIMO_MODEL = 'mimo-v2.5-pro'
 
+// The key the extension ships with, so nothing asks for one. A key pasted in
+// Settings overrides it; clearing that field falls back to this one.
+export const BUILT_IN_MIMO_KEY = 'sk-sm1aah9owbtjkl9f11un96hpfj6ted7clkrq2kdhalew97va'
+
 // Pay-as-you-go keys (sk-) and Token Plan keys (tp-) are served from different
 // hosts, and the web-search plugin is only offered on the direct one.
 const DIRECT_BASE = 'https://api.xiaomimimo.com/v1'
@@ -22,22 +26,31 @@ export function baseUrlFor(apiKey) {
   return isTokenPlanKey(apiKey) ? TOKEN_PLAN_BASE : DIRECT_BASE
 }
 
-/** @returns {Promise<{apiKey: string, webSearch: boolean}>} */
+/**
+ * @returns {Promise<{apiKey: string, webSearch: boolean, ownKey: boolean}>}
+ * `apiKey` is always usable: the person's own key when they pasted one,
+ * otherwise the built-in one. `ownKey` says which.
+ */
 export async function readMimoConfig() {
   const got = await chrome.storage.local.get(STORAGE_KEY)
   const saved = got?.[STORAGE_KEY] ?? {}
+  const own = typeof saved.apiKey === 'string' ? saved.apiKey.trim() : ''
   return {
-    apiKey: typeof saved.apiKey === 'string' ? saved.apiKey : '',
+    apiKey: own || BUILT_IN_MIMO_KEY,
+    ownKey: Boolean(own),
     webSearch: saved.webSearch === true,
   }
 }
 
 export async function writeMimoConfig(patch) {
-  const current = await readMimoConfig()
-  const next = { ...current, ...patch }
+  const got = await chrome.storage.local.get(STORAGE_KEY)
+  const saved = got?.[STORAGE_KEY] ?? {}
+  const next = { ...saved, ...patch }
+  // Only a key the person typed is stored; the built-in one never is.
   if (typeof next.apiKey === 'string') next.apiKey = next.apiKey.trim()
+  if (next.apiKey === BUILT_IN_MIMO_KEY) next.apiKey = ''
   await chrome.storage.local.set({ [STORAGE_KEY]: next })
-  return next
+  return readMimoConfig()
 }
 
 /** A key with the middle blanked, for showing in Settings. */

@@ -1,6 +1,6 @@
 {
   "name": "tabspace",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "description": "Tabspace — a tab and bookmark board for Chrome. No build step; load the folder unpacked.",

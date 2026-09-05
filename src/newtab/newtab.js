@@ -15,6 +15,13 @@ import {
 import { icon } from '../lib/icons.js'
 import { mountNewsPanel, mimoSettingRows } from './newspanel.js'
 import { readMimoConfig } from '../lib/mimo.js'
+import { timeAgo } from '../lib/news.js'
+import {
+  readRoutineStore, updateRoutineStore, emptyRoutineStore, detectRoutineReport, nameRoutine, logAction,
+  inBand, isToday, hourLabel, simulationEvents, clearSimulation,
+  ROUTINE_MIN_DAYS, ROUTINE_EVENT_DAYS,
+} from '../lib/routines.js'
+import { mountRoutinePanel } from './routinepanel.js'
 import { ask, confirmAction, dialog, dismissLayer, menu, closeMenu, dropdown } from '../lib/dialogs.js'
 import {
   readAccounts, rankAccounts, recordAccountUse, forgetAccount, describeAccount, useCount,
@@ -32,9 +39,10 @@ const ui = {
 
 let openTabs = []
 
-// The AI news view of the sidebar; mounted once the DOM is wired.
+// The AI news and Routines views of the sidebar; mounted once the DOM is wired.
 let newsPanel = null
 let newsShowing = false
+let routinePanel = null
 
 // Every URL open in any window, mapped to the tab ids showing it, so the board
 // can mark a bookmark as live. Kept separate from `openTabs`: that list is the
@@ -65,6 +73,30 @@ const $ = (id) => document.getElementById(id)
     isVisible: () => newsShowing,
   })
   renderAll()
+
+  // Learned routines: look once now, every minute, whenever the tab comes back
+  // into view, and whenever the service worker records a tab event.
+  routinePanel = mountRoutinePanel({
+    $,
+    actions: {
+      accept: acceptRoutine,
+      decline: declineRoutine,
+      run: runRoutine,
+      skip: skipRoutineToday,
+      forget: forgetRoutine,
+      simulate: simulateRoutine,
+      clearSimulation: clearRoutineSimulation,
+      setTracking: setRoutineTracking,
+    },
+  })
+  refreshRoutines()
+  setInterval(refreshRoutines, ROUTINE_CHECK_MS)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshRoutines()
+  })
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes['tabspace.routines']) routineChanged()
+  })
 })()
 
 // ------------------------------------------------------------------ theme ---
@@ -116,14 +148,16 @@ function renderAll() {
 // which one shows is a setting, like whether the sidebar is open at all.
 function renderSidebarView() {
   const s = store.state.settings
-  const view = s.sidebarView === 'news' ? 'news' : 'tabs'
-  for (const [id, name] of [['view-tabs', 'tabs'], ['view-news', 'news']]) {
+  const view = ['news', 'routines'].includes(s.sidebarView) ? s.sidebarView : 'tabs'
+  for (const [id, name] of [['view-tabs', 'tabs'], ['view-news', 'news'], ['view-routines', 'routines']]) {
     const on = view === name
     $(id).classList.toggle('is-active', on)
     $(id).setAttribute('aria-selected', on ? 'true' : 'false')
   }
   $('panel-tabs').hidden = view !== 'tabs'
   $('panel-news').hidden = view !== 'news'
+  $('panel-routines').hidden = view !== 'routines'
+  if (view === 'routines') $('routines-dot').hidden = true
 
   const showing = view === 'news' && !s.sidebarCollapsed
   if (showing && !newsShowing) newsPanel?.shown()
@@ -139,6 +173,373 @@ function renderThemeButton() {
   const pref = store.state.settings.theme ?? 'auto'
   btn.replaceChildren(icon(THEME_ICON[pref], { size: 17 }))
   btn.title = `Theme: ${pref}${pref === 'auto' ? ' (follows your system)' : ''} — click to change`
+}
+
+// ============================================================== routines ===
+//
+// Learned routines (lib/routines.js) spot sites that get opened or closed
+// together at the same time of day on several days. This is where the offer
+// shows -- the Open tabs view, just above the hint, the one spot the sidebar
+// already uses for guidance -- and where every tap lands. Nothing opens or
+// closes a tab without the confirm dialog, and every browser action gets a
+// toast whose Undo reverses that action itself: store.undo() only knows the
+// board, not Chrome's tabs.
+
+const ROUTINE_CHECK_MS = 60 * 1000
+const routineUi = { card: null, busy: false, snap: null, again: false }   // card: { routine, mode: 'offer' | 'run' }
+
+async function refreshRoutines() {
+  if (routineUi.busy) { routineUi.again = true; return }
+  routineUi.busy = true
+  try {
+    let log = await readRoutineStore()
+    const now = Date.now()
+    let { routine: found, report } = detectRoutineReport(log, now)
+
+    // A pending offer, or a new one if the record holds a pattern.
+    let offered = log.routines.find((r) => r.status === 'offered')
+    if (!offered && found && log.tracking) {
+      const seen = found.byDay === false
+        ? `${found.seen} separate times in the ${found.span} window`
+        : `around ${hourLabel(found.hour)} on ${found.seen} days`
+      log = await updateRoutineStore((s) => {
+        s.routines.push(found)
+        logAction(s, {
+          action: 'offer', routineId: found.id, name: found.name,
+          reason: `${found.kind === 'wrapup' ? 'closed' : 'opened'} together ${seen}: ${found.hosts.join(', ')}${found.sim ? ' (simulated)' : ''}`,
+        })
+        return s
+      })
+      offered = found
+      report = detectRoutineReport(log, now).report
+      if (!(store.state.settings.sidebarView === 'routines' && !store.state.settings.sidebarCollapsed)) $('routines-dot').hidden = false
+      nameRoutineWithMimo(found)
+    }
+    routineUi.snap = { store: log, report, now }
+    routinePanel?.render(routineUi.snap)
+
+    if (!log.tracking) { routineUi.card = null; renderRoutineCard(); return }
+    if (offered) { routineUi.card = { routine: offered, mode: 'offer' }; renderRoutineCard(); return }
+
+    // An accepted routine whose time of day it is, not yet run or skipped today.
+    const due = log.routines.find((r) => r.status === 'accepted' && inBand(r, now)
+      && !isToday(r.lastRunAt, now) && !isToday(r.skippedAt, now))
+    const showable = due && (due.kind === 'morning' ? routineUrlsToOpen(due).length > 0 : routineTabsToClose(due).length >= 2)
+    routineUi.card = showable ? { routine: due, mode: 'run' } : null
+    renderRoutineCard()
+  } finally {
+    routineUi.busy = false
+    if (routineUi.again) { routineUi.again = false; refreshRoutines() }
+  }
+}
+
+// The record is written by the service worker; a change there redraws the
+// live feed and re-runs the search, so a habit shows up as it forms.
+const routineChanged = debounce(refreshRoutines, 800)
+
+async function forgetRoutine(r) {
+  await updateRoutineStore((s) => {
+    s.routines = s.routines.filter((x) => x.id !== r.id)
+    logAction(s, { action: 'forget', routineId: r.id, name: r.name, reason: 'tapped Forget' })
+  })
+  if (routineUi.card?.routine.id === r.id) routineUi.card = null
+  await refreshRoutines()
+}
+
+async function setRoutineTracking(on) {
+  await updateRoutineStore((s) => {
+    s.tracking = on
+    logAction(s, { action: on ? 'tracking-on' : 'tracking-off', reason: 'Routines panel' })
+  })
+  await refreshRoutines()
+}
+
+/** Seed the pretend morning and let the ordinary search find it. */
+async function simulateRoutine() {
+  await updateRoutineStore((s) => {
+    clearSimulation(s)
+    s.events.push(...simulationEvents())
+    logAction(s, { action: 'simulate', reason: 'seeded 3 bursts of 4 sites into the last hour (marked simulated)' })
+  })
+  toast('Simulated a morning — watching the search find it')
+  await refreshRoutines()
+}
+
+async function clearRoutineSimulation() {
+  await updateRoutineStore((s) => {
+    clearSimulation(s)
+    logAction(s, { action: 'sim-clear', reason: 'removed simulated events and routines' })
+  })
+  if (routineUi.card?.routine.sim) routineUi.card = null
+  toast('Simulation cleared — real tracking untouched')
+  await refreshRoutines()
+}
+
+/** Name the offer with MiMo when a key is present; the fallback name stays otherwise. */
+async function nameRoutineWithMimo(routine) {
+  const { apiKey } = await readMimoConfig()
+  if (!apiKey) return
+  try {
+    const { name, description } = await nameRoutine({ apiKey, routine })
+    await updateRoutineStore((s) => {
+      const r = s.routines.find((x) => x.id === routine.id)
+      if (r) Object.assign(r, { name, description, named: true })
+    })
+    if (routineUi.card?.routine.id === routine.id) {
+      Object.assign(routineUi.card.routine, { name, description, named: true })
+      renderRoutineCard()
+    }
+    await refreshRoutines()
+  } catch { /* the fallback name is fine */ }
+}
+
+function routineOpenHosts() {
+  return new Set([...liveTabs.keys()].map((u) => hostnameOf(u)))
+}
+
+/** The routine's sites that are not open anywhere right now. */
+function routineUrlsToOpen(r) {
+  const open = routineOpenHosts()
+  return r.urls.filter((u) => !open.has(hostnameOf(u)))
+}
+
+/** This window's unpinned tabs on the routine's sites. */
+function routineTabsToClose(r) {
+  const hosts = new Set(r.hosts)
+  return openTabs.filter((t) => !t.pinned && hosts.has(hostnameOf(t.url ?? '')))
+}
+
+function renderRoutineCard() {
+  const slot = $('routine-offer')
+  const card = routineUi.card
+  if (!card) { slot.hidden = true; slot.replaceChildren(); return }
+  const r = card.routine
+  const n = card.mode === 'run'
+    ? (r.kind === 'wrapup' ? routineTabsToClose(r).length : routineUrlsToOpen(r).length)
+    : r.hosts.length
+  const verb = r.kind === 'wrapup' ? 'closed' : 'opened'
+
+  const kicker = el('div.routine-card__kicker', {}, [
+    icon('repeat', { size: 13 }),
+    card.mode === 'offer' ? 'Noticed a habit' : 'Time for this',
+  ])
+  const seen = r.byDay === false ? `${r.seen} separate times today` : `around ${hourLabel(r.hour)} on ${r.seen} different days`
+  const desc = card.mode === 'offer'
+    ? (r.description || `You ${verb} these ${r.hosts.length} sites together ${seen}. Want a one-tap ${r.kind === 'wrapup' ? 'close' : 'open'} for them?`)
+    : (r.kind === 'wrapup' ? `Close the ${n} open tab${n === 1 ? '' : 's'} from this set?` : `Open the ${n} of these not already open?`)
+
+  const hosts = el('div.routine-card__hosts', {}, r.hosts.map((h, i) =>
+    el('span.routine-card__host', { title: r.titles[i] || h }, [faviconEl({ url: r.urls[i], favicon: '' }, true), el('span', { text: h })])))
+
+  const primary = el('button.btn.btn--primary.btn--sm', {
+    text: card.mode === 'offer' ? 'Yes, set it up' : (r.kind === 'wrapup' ? `Close ${n} tab${n === 1 ? '' : 's'}` : `Open ${n} tab${n === 1 ? '' : 's'}`),
+  })
+  const secondary = el('button.btn.btn--quiet.btn--sm', { text: card.mode === 'offer' ? 'Not now' : 'Skip today' })
+  primary.addEventListener('click', () => (card.mode === 'offer' ? acceptRoutine(r) : runRoutine(r)))
+  secondary.addEventListener('click', () => (card.mode === 'offer' ? declineRoutine(r) : skipRoutineToday(r)))
+
+  if (r.sim) kicker.append(el('span.rp-badge', { text: 'simulated', style: { marginLeft: '6px' } }))
+  slot.replaceChildren(el('div.routine-card', {}, [
+    kicker,
+    el('div.routine-card__title', { text: r.name }),
+    el('div.routine-card__desc', { text: desc }),
+    hosts,
+    el('div.routine-card__actions', {}, [primary, secondary]),
+  ]))
+  slot.hidden = false
+}
+
+async function acceptRoutine(r) {
+  await updateRoutineStore((s) => {
+    const x = s.routines.find((y) => y.id === r.id)
+    if (x) x.status = 'accepted'
+    logAction(s, { action: 'accept', routineId: r.id, name: r.name, reason: 'tapped "Yes, set it up"' })
+  })
+  r.status = 'accepted'
+  // Setting it up never runs it: the first run is its own confirmed tap.
+  await runRoutine(r)
+  await refreshRoutines()
+}
+
+async function declineRoutine(r) {
+  await updateRoutineStore((s) => {
+    const x = s.routines.find((y) => y.id === r.id)
+    if (x) x.status = 'declined'
+    logAction(s, { action: 'decline', routineId: r.id, name: r.name, reason: 'tapped "Not now"' })
+  })
+  toast('Okay — it will not be offered again')
+  await refreshRoutines()
+}
+
+async function skipRoutineToday(r) {
+  await updateRoutineStore((s) => {
+    const x = s.routines.find((y) => y.id === r.id)
+    if (x) x.skippedAt = Date.now()
+    logAction(s, { action: 'skip', routineId: r.id, name: r.name, reason: 'tapped "Skip today"' })
+  })
+  await refreshRoutines()
+}
+
+/** The only place a routine touches Chrome's tabs. Confirm first, undo after. */
+async function runRoutine(r) {
+  if (r.kind === 'wrapup') return runWrapup(r)
+
+  const urls = routineUrlsToOpen(r)
+  if (!urls.length) {
+    toast('Those are all open already')
+    await markRoutineRan(r, 'nothing to open')
+    return
+  }
+  const ok = await confirmAction({
+    title: `Open ${urls.length} tab${urls.length === 1 ? '' : 's'}?`,
+    subtitle: urls.map((u) => hostnameOf(u)).join(' · '),
+    confirmLabel: 'Open',
+    tone: 'primary',
+  })
+  if (!ok) {
+    await updateRoutineStore((s) => logAction(s, { action: 'cancel', routineId: r.id, name: r.name, reason: 'declined the open dialog' }))
+    return
+  }
+  const opened = []
+  for (const url of urls) {
+    const tab = await chrome.tabs.create({ url, active: false }).catch(() => null)
+    if (tab?.id != null) opened.push(tab.id)
+  }
+  await markRoutineRan(r, `opened ${opened.length}: ${urls.map(hostnameOf).join(', ')}`)
+  toast(`Opened ${opened.length} tab${opened.length === 1 ? '' : 's'}`, {
+    label: 'Undo',
+    onClick: async () => {
+      await chrome.tabs.remove(opened).catch(() => {})
+      await updateRoutineStore((s) => logAction(s, { action: 'undo', routineId: r.id, name: r.name, reason: `closed the ${opened.length} just opened` }))
+    },
+  })
+}
+
+async function runWrapup(r) {
+  const tabs = routineTabsToClose(r)
+  if (!tabs.length) {
+    toast('Nothing from that set is open')
+    await markRoutineRan(r, 'nothing to close')
+    return
+  }
+  const ok = await confirmAction({
+    title: `Close ${tabs.length} tab${tabs.length === 1 ? '' : 's'}?`,
+    subtitle: tabs.map((t) => t.title || hostnameOf(t.url ?? '')).join(' · '),
+    confirmLabel: 'Close',
+  })
+  if (!ok) {
+    await updateRoutineStore((s) => logAction(s, { action: 'cancel', routineId: r.id, name: r.name, reason: 'declined the close dialog' }))
+    return
+  }
+  const urls = tabs.map((t) => t.url).filter(Boolean)
+  await chrome.tabs.remove(tabs.map((t) => t.id)).catch(() => {})
+  await markRoutineRan(r, `closed ${tabs.length}: ${[...new Set(urls.map(hostnameOf))].join(', ')}`)
+  toast(`Closed ${tabs.length} tab${tabs.length === 1 ? '' : 's'}`, {
+    label: 'Undo',
+    onClick: async () => {
+      for (const url of urls) await chrome.tabs.create({ url, active: false }).catch(() => {})
+      await updateRoutineStore((s) => logAction(s, { action: 'undo', routineId: r.id, name: r.name, reason: `reopened the ${urls.length} just closed` }))
+    },
+  })
+}
+
+async function markRoutineRan(r, reason) {
+  await updateRoutineStore((s) => {
+    const x = s.routines.find((y) => y.id === r.id)
+    if (x) x.lastRunAt = Date.now()
+    logAction(s, { action: 'run', routineId: r.id, name: r.name, reason })
+  })
+  r.lastRunAt = Date.now()
+}
+
+// --------------------------------------------------------------- settings ---
+
+function routineSettingRows(log) {
+  const trackingToggle = toggleControl(log.tracking !== false, async (v) => {
+    await updateRoutineStore((s) => {
+      s.tracking = v
+      logAction(s, { action: v ? 'tracking-on' : 'tracking-off', reason: 'Settings toggle' })
+    })
+    refreshRoutines()
+  })
+  const activity = el('button.btn.btn--quiet.btn--sm', { text: 'Activity' })
+  activity.addEventListener('click', () => { dismissLayer(); routineActivityDialog() })
+
+  return [
+    settingRow('Learned routines',
+      `Tabspace notices sites you open together, or close together, at about the same time of day on ${ROUTINE_MIN_DAYS} or more days, and offers a one-tap version. It only ever offers: nothing opens or closes without your confirmation, and every run has an Undo. The record of tab opens and closes stays on this device for ${ROUTINE_EVENT_DAYS} days — never synced, never exported. With a MiMo key, the model names a routine from its site names and titles only.`,
+      [trackingToggle, activity]),
+  ]
+}
+
+async function routineActivityDialog() {
+  const log = await readRoutineStore()
+  const body = el('div', {})
+
+  const routines = [...log.routines].sort((a, b) => b.createdAt - a.createdAt)
+  body.append(el('div.setting__title', { text: 'Routines' }))
+  if (!routines.length) {
+    body.append(el('div.routine-empty', { text: `Nothing learned yet. ${log.events.length} tab event${log.events.length === 1 ? '' : 's'} recorded so far; a pattern needs ${ROUTINE_MIN_DAYS} days.` }))
+  } else {
+    body.append(el('div.routine-list', {}, routines.map((r) => {
+      const forget = el('button.btn.btn--quiet.btn--sm', { text: 'Forget' })
+      forget.addEventListener('click', async () => {
+        await updateRoutineStore((s) => {
+          s.routines = s.routines.filter((x) => x.id !== r.id)
+          logAction(s, { action: 'forget', routineId: r.id, name: r.name, reason: 'Settings → Forget' })
+        })
+        dismissLayer()
+        routineActivityDialog()
+        refreshRoutines()
+      })
+      return el('div.routine-row', {}, [
+        el('div.routine-row__body', {}, [
+          el('div.routine-row__name', { text: r.name }),
+          el('div.routine-row__sub', { text: `${r.kind === 'wrapup' ? 'Closes' : 'Opens'} ${r.hosts.join(', ')} around ${hourLabel(r.hour)} · seen on ${r.seen} days` }),
+        ]),
+        el(`span.routine-row__status.routine-row__status--${r.status}`, { text: r.status }),
+        forget,
+      ])
+    })))
+  }
+
+  body.append(el('div.setting__title', { text: 'Recent activity', style: { marginTop: '16px' } }))
+  const entries = log.log.slice(-20).reverse()
+  if (!entries.length) {
+    body.append(el('div.routine-empty', { text: 'No routine activity yet.' }))
+  } else {
+    body.append(el('div.routine-log', {}, entries.map((e) => el('div.routine-log__row', {}, [
+      el('span.routine-log__when', { text: timeAgo(new Date(e.t).toISOString()) }),
+      el('span.routine-log__what', {}, [el('b', { text: e.action }), e.name ? ` · ${e.name}` : '', e.reason ? ` — ${e.reason}` : '']),
+    ]))))
+  }
+
+  const forgetAll = el('button.btn.btn--quiet.btn--sm', { text: 'Forget everything' })
+  forgetAll.addEventListener('click', async () => {
+    const ok = await confirmAction({
+      title: 'Forget all routines and the tab record?',
+      subtitle: 'Routines, the activity log and the record of tab opens and closes on this device are cleared. Your board is untouched.',
+      confirmLabel: 'Forget',
+    })
+    if (!ok) return routineActivityDialog()
+    await updateRoutineStore((s) => {
+      const keepTracking = s.tracking
+      Object.assign(s, emptyRoutineStore(), { tracking: keepTracking })
+    })
+    routineUi.card = null
+    renderRoutineCard()
+    toast('Routines forgotten')
+  })
+
+  dialog({
+    title: 'Learned routines',
+    body,
+    wide: true,
+    actions: [
+      { label: 'Forget everything', onClick: () => { dismissLayer(); forgetAll.click() } },
+      { label: 'Done', tone: 'primary', onClick: dismissLayer },
+    ],
+  })
 }
 
 // ============================================================ chrome wiring ===
@@ -1534,6 +1935,7 @@ async function settingsDialog() {
   const s = store.state.settings
   const sync = store.sync.describe()
   const mimo = await readMimoConfig()
+  const routineLog = await readRoutineStore()
 
   const quietBtn = (label, onClick) => {
     const b = el('button.btn.btn--quiet.btn--sm', { text: label })
@@ -1556,6 +1958,8 @@ async function settingsDialog() {
         newsPanel?.refresh({ force: true })
       },
     }),
+
+    ...routineSettingRows(routineLog),
 
     settingRow('Font', 'Inter and Manrope ship with the extension, so they look the same everywhere.',
       dropdown({
@@ -2280,6 +2684,7 @@ function wireUi() {
 
   $('view-tabs').addEventListener('click', () => setSidebarView('tabs'))
   $('view-news').addEventListener('click', () => setSidebarView('news'))
+  $('view-routines').addEventListener('click', () => setSidebarView('routines'))
 
   // The top-bar news button: opens the sidebar on the news view, and if that
   // is already what is showing, tucks the sidebar away again.
