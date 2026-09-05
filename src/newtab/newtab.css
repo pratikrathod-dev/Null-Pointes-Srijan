@@ -1,0 +1,1335 @@
+/* ===========================================================================
+   Tabspace — Material 3
+   ---------------------------------------------------------------------------
+   Uses Google's own Material 3 blue palette, the one Pixel and the Google apps
+   ship with. Material's model is tonal: surfaces are a stack of increasingly
+   raised neutral tones rather than white boxes separated by borders, and
+   interactive colour comes from "container" pairs (a tinted background with a
+   matching readable foreground) instead of raw brand colour.
+
+   State layers follow the spec too — hover is an 8% overlay of the foreground
+   colour, pressed 12% — which is what makes Material controls feel responsive
+   without changing their base colour.
+   =========================================================================== */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Manrope';
+  src: url('../fonts/manrope.woff2') format('woff2');
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  /* primary */
+  --primary: #0b57d0;
+  --on-primary: #ffffff;
+  --primary-container: #d3e3fd;
+  --on-primary-container: #041e49;
+
+  /* secondary / tertiary */
+  --secondary-container: #c2e7ff;
+  --on-secondary-container: #001d35;
+  --tertiary-container: #ffdcc2;
+  --on-tertiary-container: #331400;
+
+  /* tonal surface stack, lowest to highest */
+  /* Material's container ladder: lowest is white and each step is slightly
+     deeper. `surface` is a separate role — the page itself — and deliberately
+     sits below the cards so white cards lift off it. */
+  --surface: #eaeef4;
+  --surface-lowest: #ffffff;
+  --surface-low: #f8fafd;
+  --surface-container: #f1f4f9;
+  --surface-high: #e8ecf3;
+  --surface-highest: #e0e5ed;
+  --card-bg: #ffffff;
+
+  --on-surface: #1f1f1f;
+  --on-surface-variant: #444746;
+  --on-surface-muted: #747775;
+
+  --outline: #747775;
+  --outline-variant: #c4c7c5;
+  --card-border: #e3e7ec;
+
+  --error: #b3261e;
+  --error-container: #f9dedc;
+  --on-error-container: #410e0b;
+  --success: #146c2e;
+  --warning: #b06000;
+
+  /* Material elevation: soft, low-contrast, mostly ambient */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, .30), 0 1px 3px 1px rgba(0, 0, 0, .15);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, .30), 0 2px 6px 2px rgba(0, 0, 0, .15);
+  --elev-3: 0 4px 8px 3px rgba(0, 0, 0, .15), 0 1px 3px rgba(0, 0, 0, .30);
+
+  /* Material shape scale */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+  --r-xl: 28px;
+  --r-full: 999px;
+
+  --sidebar-w: 340px;
+
+  /* Material easing (emphasized) */
+  --ease: cubic-bezier(.2, 0, 0, 1);
+  --fast: .15s;
+  --med: .25s;
+
+  --font: 'Inter', 'Google Sans', Roboto, system-ui, sans-serif;
+  --font-display: 'Manrope', 'Google Sans', Roboto, system-ui, sans-serif;
+  --tracking: 0;
+
+  /* aliases kept so existing rules read naturally */
+  --bg: var(--surface);
+  --border: var(--outline-variant);
+  --border-strong: var(--outline);
+  --text: var(--on-surface);
+  --text-2: var(--on-surface-variant);
+  --text-3: var(--on-surface-muted);
+  --accent: var(--primary);
+  --accent-hover: #0842a0;
+  --accent-soft: var(--primary-container);
+  --accent-border: #a8c7fa;
+  --on-accent: var(--on-primary);
+  --danger: var(--error);
+  --danger-soft: var(--error-container);
+  --surface-2: var(--surface-container);
+  --surface-3: var(--surface-high);
+  --shadow-sm: var(--elev-1);
+  --shadow: var(--elev-2);
+  --shadow-lg: var(--elev-3);
+
+  /* Frosted glass. Light theme frosts *towards white*, so whatever colourful
+     thing is behind the panel is washed out and dark label text stays readable
+     on top of it. The dark theme has to do the opposite -- see below.
+
+     The fill is kept low on purpose. At 58% white over a board that is already
+     near-white there was nothing left to see through and the panel just read as
+     a plain white pill; glass only announces itself if the backdrop can still be
+     made out in it. What defines the shape at that point is the lit top edge and
+     the shadow, not the fill. */
+  --glass: rgba(255, 255, 255, .34);
+  --glass-sheen: rgba(255, 255, 255, .55);
+  --glass-solid: rgba(255, 255, 255, .95);
+  --glass-edge: rgba(255, 255, 255, .85);
+  --glass-rim: rgba(255, 255, 255, .95);
+  --glass-shadow: 0 8px 24px rgba(15, 20, 30, .20);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --primary: #a8c7fa;
+  --on-primary: #062e6f;
+  --primary-container: #0842a0;
+  --on-primary-container: #d3e3fd;
+
+  --secondary-container: #0a4f7d;
+  --on-secondary-container: #cbe9ff;
+  --tertiary-container: #7a4b00;
+  --on-tertiary-container: #ffe0c2;
+
+  /* Material's dark surfaces sit close together by design, and a neutral grey
+     ladder that tight came out as flat black: page, sidebar and cards were all
+     the same non-colour and the only hue on the board was the folder headers.
+     The steps are wider now and every one of them carries a blue tint, so the
+     board reads as a stack of surfaces rather than one dark sheet.
+
+     The sidebar is *lighter* than the board, not darker. It is a raised panel
+     in the light theme (white against grey) and inverting that relationship in
+     the dark theme made the two themes feel like different applications. */
+  --surface: #0d1117;
+  --surface-lowest: #161c25;
+  --surface-low: #1a212b;
+  --surface-container: #212936;
+  --surface-high: #2a3341;
+  --surface-highest: #36404f;
+  --card-bg: #171e28;
+
+  --on-surface: #e7ebf2;
+  --on-surface-variant: #bfc7d4;
+  --on-surface-muted: #8792a2;
+
+  --outline: #8792a2;
+  --outline-variant: #303a47;
+  --card-border: #2b3540;
+
+  --error: #ffb4ab;
+  --error-container: #7a1912;
+  --on-error-container: #ffdad6;
+  --success: #7ee2a0;
+  --warning: #ffc078;
+
+  --elev-1: 0 1px 2px rgba(0, 0, 0, .30), 0 1px 3px 1px rgba(0, 0, 0, .15);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, .30), 0 2px 6px 2px rgba(0, 0, 0, .15);
+  --elev-3: 0 4px 8px 3px rgba(0, 0, 0, .15), 0 1px 3px rgba(0, 0, 0, .30);
+
+  --accent-hover: #c2d7ff;
+  --accent-border: #1a56b8;
+
+  /* Smoked, not milky. A white film over a bright sticky note leaves a pale
+     panel, and the dark theme's light label text disappears on it; frosting
+     towards the page colour instead keeps the panel dark whatever is behind it.
+     The rim stays white -- that thin lit edge is what reads as glass. */
+  --glass: rgba(13, 17, 24, .48);
+  --glass-sheen: rgba(255, 255, 255, .10);
+  --glass-solid: rgba(20, 26, 35, .94);
+  --glass-edge: rgba(255, 255, 255, .16);
+  --glass-rim: rgba(255, 255, 255, .20);
+  --glass-shadow: 0 8px 26px rgba(0, 0, 0, .55);
+
+  color-scheme: dark;
+}
+
+:root[data-font='manrope'] { --font: 'Manrope', system-ui, sans-serif; }
+:root[data-font='system']  { --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+* { box-sizing: border-box; }
+::selection { background: var(--accent); color: var(--on-accent); }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13.5px;
+  line-height: 1.5;
+  letter-spacing: var(--tracking);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+/* Scrollbars — the platform default is the loudest thing on the page. */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--text-3); background-clip: content-box; }
+
+.icon { flex: 0 0 auto; display: block; }
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 550;
+  letter-spacing: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+              color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.btn:active { transform: scale(.98); }
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-sm);
+}
+.btn--primary:hover { background: var(--accent-hover); box-shadow: var(--elev-2); }
+
+.btn--quiet {
+  background: transparent;
+  border-color: var(--outline-variant);
+  color: var(--primary);
+}
+.btn--quiet:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); border-color: var(--outline); }
+
+.btn--danger { background: var(--danger); color: #fff; }
+.btn--danger:hover { filter: brightness(1.06); }
+
+.btn--sm { height: 32px; padding: 0 14px; font-size: 12.5px; }
+
+/* Square icon-only button — the workhorse of the top bar and every card. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.icon-btn:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); color: var(--on-surface); }
+.icon-btn:active { background: color-mix(in srgb, var(--on-surface) 12%, transparent); }
+.icon-btn--sm { width: 28px; height: 28px; }
+
+:where(button, a, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ----------------------------------------------------------------- fields */
+
+.field {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r);
+  background: var(--surface-low);
+  color: var(--text);
+  font: inherit;
+  letter-spacing: inherit;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.55; }
+.field::placeholder { color: var(--text-3); }
+.field:hover { border-color: var(--text-3); }
+.field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  background: var(--surface-lowest);
+}
+.field__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--text-2);
+}
+.field__error { margin: 6px 0 0; font-size: 12.5px; color: var(--danger); min-height: 1em; }
+
+/* password field with a reveal control */
+.field__wrap { position: relative; }
+.field--withReveal { padding-right: 46px; }
+.field__reveal {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.field__reveal:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); color: var(--on-surface); }
+
+/* a button that reads as a link, for "switch to sign up" */
+.linkish {
+  margin-top: 14px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.linkish:hover { text-decoration: underline; }
+
+/* account suggestions under the email field ------------------------------- */
+
+/* .dialog__body scrolls, and a scroll container clips absolutely positioned
+   children even when no scrollbar appears. The sign-in dialog is short and
+   never needs to scroll, so release the clip when it holds a suggestion list --
+   otherwise the dropdown is guillotined at the bottom of the body. */
+.dialog__body:has(.suggest) { overflow: visible; }
+
+.field__hint { margin: 6px 0 0; font-size: 12px; color: var(--text-3); }
+
+.suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  max-height: 268px;
+  overflow-y: auto;
+  padding: 6px;
+  display: none;
+  background: var(--surface-container);
+  border: 1px solid var(--card-border, var(--outline-variant));
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+}
+.suggest.is-open { display: block; }
+
+.suggest__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.suggest__row.is-active,
+.suggest__row:hover { background: var(--secondary-container); }
+
+.suggest__avatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.suggest__body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.suggest__email {
+  font-size: 13.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.suggest__meta { font-size: 11.5px; color: var(--text-3); }
+.suggest__row.is-active .suggest__email,
+.suggest__row.is-active .suggest__meta { color: var(--on-secondary-container); }
+
+.suggest__badge {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.suggest__forget {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease), background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.suggest__row:hover .suggest__forget,
+.suggest__row.is-active .suggest__forget { opacity: 1; }
+.suggest__forget:hover {
+  background: color-mix(in srgb, var(--on-surface) 12%, transparent);
+  color: var(--text);
+}
+/* Keyboard users never hover, so the control must be reachable without it. */
+.suggest__forget:focus-visible { opacity: 1; outline: 2px solid var(--primary); outline-offset: 1px; }
+
+.search { position: relative; flex: 0 0 auto; width: 260px; }
+.search .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+.search .field { height: 40px; padding-left: 42px; background: var(--surface-container); border-color: transparent; border-radius: var(--r-full); }
+.search .field:focus { background: var(--surface-lowest); border-color: var(--primary); }
+
+.switch { position: relative; width: 40px; height: 23px; flex: 0 0 40px; display: block; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch__track {
+  position: absolute; inset: 0;
+  background: var(--surface-3);
+  border-radius: var(--r-full);
+  pointer-events: none;
+  transition: background var(--med) var(--ease);
+}
+.switch__track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  transition: transform var(--med) var(--ease);
+}
+.switch input:checked + .switch__track { background: var(--accent); }
+.switch input:checked + .switch__track::after { transform: translateX(17px); }
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease);
+}
+.select:hover { border-color: var(--text-3); }
+.select__value { flex: 1; text-align: left; }
+.select__caret { color: var(--text-3); }
+
+/* ================================================================= layout */
+
+.app { display: flex; height: 100vh; }
+
+/* ---------------------------------------------------------------- sidebar */
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  background: var(--surface-lowest);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: flex-basis var(--med) var(--ease), width var(--med) var(--ease);
+}
+.app.sidebar-collapsed .sidebar { width: 0; flex-basis: 0; overflow: hidden; border-right-color: transparent; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 16px 10px;
+}
+.brand__mark {
+  width: 30px; height: 30px;
+  border-radius: var(--r-sm);
+  display: grid; place-items: center;
+  overflow: hidden;
+  flex: 0 0 30px;
+}
+.brand__mark img { width: 100%; height: 100%; display: block; }
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.section-head__count {
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.section-head .spacer { flex: 1; }
+
+.sidebar__tools { display: flex; gap: 6px; padding: 4px 12px 10px; }
+.sidebar__tools .btn { flex: 1; }
+
+.hint {
+  margin: 0 12px 10px;
+  padding: 9px 11px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+
+.tab-list { flex: 1; overflow-y: auto; padding: 0 8px 14px; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--r-full);
+  cursor: grab;
+  user-select: none;
+  transition: background var(--fast) var(--ease);
+}
+.row:hover { background: var(--surface-2); }
+.row.is-selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.row__body { min-width: 0; flex: 1; }
+.row__title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row__sub { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row.is-saved .row__title { color: var(--text-3); }
+.row__action { opacity: 0; transition: opacity var(--fast) var(--ease); }
+.row:hover .row__action { opacity: 1; }
+.row__saved { color: var(--success); }
+
+/*
+ * Favicons sit on a plate whose colour is picked from the icon itself, measured
+ * at load time: a dark glyph gets a white plate, a white or very pale one gets
+ * a dark plate. That is why neither disappears, in either theme, without
+ * anything being drawn over the artwork.
+ */
+.favicon {
+  width: 28px; height: 28px;
+  flex: 0 0 28px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+  overflow: hidden;
+}
+/* Icon is white or near-white: put it on a dark plate instead. */
+.favicon--onDark {
+  background: #303134;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
+}
+.favicon img { width: 20px; height: 20px; display: block; }
+.favicon--sm { width: 20px; height: 20px; flex-basis: 20px; border-radius: var(--r-xs); }
+.favicon--sm img { width: 16px; height: 16px; }
+
+/* ------------------------------------------------------------------- main */
+
+.main { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  /* The chrome -- sidebar, top bar, tag bar, status bar -- is one raised panel
+     colour, and the board is the darker field inside it. Painting the bars the
+     same tone as the board left the sidebar looking bolted on in the light
+     theme and the whole window looking like one flat sheet in the dark one. */
+  background: var(--surface-lowest);
+  border-bottom: 1px solid var(--border);
+}
+.topbar__divider { width: 1px; height: 20px; background: var(--border); flex: 0 0 1px; }
+
+.spaces {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.spaces::-webkit-scrollbar { display: none; }
+
+.space-tab {
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-weight: 550;
+  letter-spacing: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.space-tab:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); color: var(--on-surface); }
+.space-tab.is-active { background: var(--secondary-container); color: var(--on-secondary-container); }
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  letter-spacing: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.account--out { background: var(--primary); color: var(--on-primary); box-shadow: var(--elev-1); }
+.account--out:hover { background: var(--accent-hover); }
+.account--in { background: var(--surface-container); color: var(--on-surface-variant); font-weight: 500; }
+.account--in:hover { background: var(--surface-3); color: var(--text); }
+.account--warn { background: var(--danger-soft); color: var(--danger); }
+.account__avatar {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--accent), #7b8fff);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: grid; place-items: center;
+  flex: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.tagbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: var(--surface-lowest);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tagbar::-webkit-scrollbar { display: none; }
+.tagbar:empty { display: none; }
+.tagbar .spacer { flex: 1; min-width: 8px; }
+.tagbar__hide { flex: 0 0 auto; color: var(--text-3); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.chip:hover { border-color: var(--border-strong); color: var(--text); }
+.chip.is-active { background: var(--secondary-container); border-color: transparent; color: var(--on-secondary-container); }
+.chip__count { opacity: .65; font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ board */
+
+.board-scroll { flex: 1; overflow: auto; }
+.board-wrap { position: relative; min-height: 100%; }
+
+/* Masonry, but built in JS (see layoutBoard) rather than with `column-width`.
+   The browser balances a multi-column box across every column that fits the
+   available width, so a board with three folders on a wide window -- the
+   sidebar hidden, say -- put one folder in each of the first three columns and
+   left the rest of the page blank. Dealing the cards into columns by hand means
+   never making more columns than there are cards to fill them.
+
+   A grid is still wrong here: it would give every folder in a row the tallest
+   one's height, leaving dead space beside short folders. */
+.board {
+  --board-gap: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--board-gap);
+  /* Deeper at the bottom: the floating actions hover there and would otherwise
+     cover the last card in a column. */
+  padding: 18px 18px 72px;
+  min-height: 100%;
+  position: relative;
+  z-index: 1;
+}
+.board__col {
+  flex: 1 1 0;
+  min-width: 0;
+  /* Past this a folder is mostly whitespace with a title in the corner. */
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--board-gap);
+}
+/* The empty state is one centred block, not a card in a column. */
+.board.is-empty { display: block; }
+
+/* The folder's colour washes through the whole card, not just the header. A
+   coloured hat on a neutral box left every folder looking the same below the
+   fold; a few per cent of the same hue in the body and the border is enough to
+   make the card read as one coloured object. */
+.folder {
+  background: color-mix(in srgb, var(--folder-color, transparent) 15%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--folder-color, transparent) 38%, var(--card-border));
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--med) var(--ease), border-color var(--fast) var(--ease);
+}
+:root[data-theme='dark'] .folder {
+  background: color-mix(in srgb, var(--folder-color, transparent) 13%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--folder-color, transparent) 28%, var(--card-border));
+}
+/* The palette is built for light backgrounds, so at full strength a header is
+   a glaring white-ish bar on a dark board. Knocking it back keeps the hue and
+   the dark header text while letting the card sit in the page. */
+:root[data-theme='dark'] .folder__head {
+  background: color-mix(in srgb, var(--folder-color, #9aa4b2) 92%, #0b0f14);
+}
+.folder:hover { box-shadow: var(--elev-2); }
+.folder.is-dragging { opacity: .45; }
+.folder.is-drop-target { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.folder__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  cursor: grab;
+  /* The folder's colour fills the header — set as --folder-color per folder. */
+  background: var(--folder-color, var(--surface-2));
+  color: #0e1116;
+}
+.folder__head .icon-btn { color: rgba(14, 17, 22, .55); }
+.folder__head .icon-btn:hover { background: rgba(255, 255, 255, .45); color: #0e1116; }
+.folder__caret { transition: transform var(--med) var(--ease); }
+.folder.is-collapsed .folder__caret { transform: rotate(-90deg); }
+.folder__title {
+  display: block;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folder__title[contenteditable='true'] { white-space: normal; outline: none; cursor: text; }
+
+.folder__heading { flex: 1; min-width: 0; }
+.folder__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.folder__tag {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, .55);
+  color: rgba(14, 17, 22, .78);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.folder__tag:hover { background: rgba(255, 255, 255, .85); color: #0e1116; }
+.folder__count {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(14, 17, 22, .5);
+  font-variant-numeric: tabular-nums;
+}
+
+.folder__body { padding: 4px; display: flex; flex-direction: column; gap: 1px; }
+.folder.is-collapsed .folder__body { display: none; }
+.folder__empty {
+  padding: 13px 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  margin: 2px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 7px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--fast) var(--ease);
+}
+.item:hover { background: color-mix(in srgb, var(--folder-color, transparent) 26%, var(--surface-2)); }
+
+/* A bookmark whose page is open in a tab right now. The tint and the bar down
+   the left say "live"; the close button beside it shuts that tab and nothing
+   else -- the bookmark stays in the folder either way. */
+.item.is-open {
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  box-shadow: inset 2px 0 0 var(--success);
+}
+.item.is-open:hover { background: color-mix(in srgb, var(--success) 22%, transparent); }
+.item.is-open .item__title { font-weight: 600; }
+.item__close { opacity: .7; color: var(--text-2); }
+.item:hover .item__close { opacity: 1; }
+.item__close:hover { background: var(--danger-soft); color: var(--danger); opacity: 1; }
+.item__close:focus-visible { opacity: 1; }
+
+.item.is-selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.item__body { min-width: 0; flex: 1; }
+.item__title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item__tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+.item__tag {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.item__action { opacity: 0; transition: opacity var(--fast) var(--ease); }
+.folder:hover .item__action { opacity: .5; }
+.item:hover .item__action { opacity: 1; }
+
+/* Controls inside a card are a size down from the top bar's. At 28px they set
+   the row height on their own and a folder stopped reading as a list. */
+.folder__head .icon-btn--sm { width: 24px; height: 24px; }
+.item .icon-btn--sm,
+.group__head .icon-btn--sm { width: 22px; height: 22px; }
+
+.item--note {
+  display: block;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--r-sm);
+  white-space: pre-wrap;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.group {
+  border: 1px solid var(--card-border);
+  border-radius: var(--r);
+  background: var(--surface-container);
+  margin: 3px 0;
+  overflow: hidden;
+}
+.group.is-drop-target { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.group__head { display: flex; align-items: center; gap: 6px; padding: 4px 6px; cursor: grab; }
+.group__caret { color: var(--text-3); transition: transform var(--med) var(--ease); }
+.group.is-collapsed .group__caret { transform: rotate(-90deg); }
+.group__title {
+  flex: 1; min-width: 0;
+  font-size: 12px; font-weight: 650; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.group__title[contenteditable='true'] { white-space: normal; outline: none; }
+.group__count { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.group__body { padding: 0 4px 4px; display: flex; flex-direction: column; gap: 1px; }
+.group.is-collapsed .group__body { display: none; }
+
+.add-folder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border: 1px dashed var(--outline);
+  border-radius: var(--r-lg);
+  background: transparent;
+  color: var(--text-3);
+  font: inherit;
+  font-weight: 550;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.add-folder:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* One centred block: icon, title, one line, one action. `column-span: all` keeps
+   it clear of the masonry columns instead of being packed into the first one. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--text-3);
+}
+.empty-state__icon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-3);
+  opacity: .8;
+}
+.empty-state__title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin: 14px 0 0;
+}
+.empty-state__body {
+  /* Held to a readable measure -- the board is as wide as the window, and a
+     sentence stretched across all of it is not a sentence anyone reads. */
+  max-width: 38ch;
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-3);
+}
+.empty-state__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.sticker {
+  position: absolute;
+  pointer-events: auto;
+  width: 12em;
+  min-height: 7em;
+  max-width: 30em;
+  padding: .8em .9em;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  color: #14161c;
+  cursor: grab;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+  font-weight: 500;
+  transition: box-shadow var(--fast) var(--ease);
+}
+.sticker:hover { box-shadow: var(--shadow-lg); }
+.sticker.is-dragging { box-shadow: var(--shadow-lg); z-index: 5; cursor: grabbing; }
+.sticker.is-struck { text-decoration: line-through; opacity: .6; }
+.sticker[contenteditable='true'] { cursor: text; outline: 2px solid var(--accent); outline-offset: 3px; }
+.sticker__placeholder { opacity: .45; }
+.sticker__menu {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  opacity: 0;
+  color: rgba(20, 22, 28, .6);
+  background: rgba(255, 255, 255, .5);
+  border-radius: 6px;
+}
+.sticker:hover .sticker__menu { opacity: 1; }
+.sticker__menu:hover { background: rgba(255, 255, 255, .85); color: #14161c; }
+.sticker[contenteditable='true'] .sticker__menu { display: none; }
+
+.canvas-layer { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+/* -------------------------------------------------------------- statusbar */
+
+/* Two actions floating over the board, not a bar under it. A full-width strip
+   for two buttons cost a row of the window and drew a hard line across the
+   bottom of every board; these hover in the same place without claiming any
+   layout. The container ignores the pointer so only the buttons themselves are
+   ever in the way of a folder underneath.
+
+   They stay quiet until wanted: half strength at rest, full on hover or focus.
+   The board counts and the sync state that used to share this row live in
+   Settings and the top bar now. */
+.statusbar {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.statusbar .btn {
+  pointer-events: auto;
+  /* Recessive by translucency rather than `opacity`: fading the whole element
+     takes the label down with it, and a half-erased word sitting on top of a
+     note is exactly the mess this is meant to avoid. The glass thins instead,
+     and the blur keeps whatever is underneath from reading through the text.
+     Saturation is pushed past 100% because blurring alone leaves the colour
+     behind the panel looking washed and dead. */
+  background-color: var(--glass);
+  /* The sheen down the top half is the other half of the illusion: real glass
+     catches the light along its upper curve, and without it a blurred panel
+     just looks out of focus. */
+  background-image: linear-gradient(to bottom, var(--glass-sheen), transparent 62%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-color: var(--glass-edge);
+  color: var(--text-2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-rim);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+              color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.statusbar .btn:hover,
+.statusbar .btn:focus-visible {
+  background-color: var(--glass-solid);
+  border-color: var(--glass-rim);
+  color: var(--primary);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 var(--glass-rim);
+}
+
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.sync-pill__label { white-space: nowrap; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); flex: 0 0 6px; }
+.sync-dot.is-busy { background: var(--warning); animation: pulse 1.2s var(--ease) infinite; }
+.sync-dot.is-off { background: var(--text-3); }
+.sync-dot.is-bad { background: var(--danger); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+.meter { width: 56px; height: 4px; border-radius: var(--r-full); background: var(--surface-3); overflow: hidden; }
+.meter__fill { height: 100%; background: var(--accent); border-radius: var(--r-full); transition: width var(--med) var(--ease); }
+.meter__fill.is-warn { background: var(--warning); }
+.meter__fill.is-bad { background: var(--danger); }
+
+/* ====================================================== menus and dialogs */
+
+.menu {
+  position: fixed;
+  /* Above dialogs (100): a menu opened from inside a dialog — the font picker,
+     a colour swatch — must float over it, not behind the dimmed backdrop. */
+  z-index: 120;
+  min-width: 224px;
+  max-width: 320px;
+  padding: 8px 0;
+  background: var(--surface-container);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(-4px) scale(.985);
+  transform-origin: top left;
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.menu.is-open { opacity: 1; transform: none; }
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.menu__item:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.menu__item .icon { color: var(--text-3); }
+.menu__item:hover .icon { color: var(--text-2); }
+.menu__item--danger { color: var(--danger); }
+.menu__item--danger .icon { color: var(--danger); }
+.menu__item--danger:hover { background: var(--danger-soft); }
+.menu__item span { flex: 1; }
+.menu__hint { font-size: 11px; color: var(--text-3); font-family: var(--font); }
+
+.menu__rule { height: 1px; background: var(--outline-variant); margin: 8px 0; }
+.menu__heading {
+  padding: 8px 14px 4px;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.menu__swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 4px 14px 12px; }
+.swatch {
+  width: 26px; height: 26px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: var(--swatch);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1);
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.swatch:hover { transform: scale(1.12); }
+.swatch.is-active { box-shadow: 0 0 0 2px var(--surface-container), 0 0 0 4px var(--primary); }
+.menu__choices { display: flex; gap: 8px; padding: 4px 14px 12px; flex-wrap: wrap; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 12, 18, .45);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity var(--med) var(--ease);
+}
+.overlay.is-open { opacity: 1; }
+:root[data-theme='dark'] .overlay { background: rgba(0, 0, 0, .62); }
+
+.dialog {
+  width: min(460px, 100%);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-container);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(8px) scale(.98);
+  transition: transform var(--med) var(--ease);
+}
+.dialog--wide { width: min(620px, 100%); }
+.overlay.is-open .dialog { transform: none; }
+
+.dialog__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 20px 0;
+}
+.dialog__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.dialog__subtitle { margin: 4px 0 0; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.dialog__close { margin-left: auto; flex: 0 0 30px; }
+
+.dialog__body { padding: 16px 20px 4px; overflow-y: auto; }
+.dialog__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 16px 20px 20px;
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting:last-child { border-bottom: 0; }
+.setting__body { flex: 1; min-width: 0; }
+.setting__title { font-weight: 550; font-size: 13.5px; }
+.setting__desc { margin-top: 3px; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+.setting__control { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; }
+
+.steps { counter-reset: step; }
+.step { position: relative; padding: 0 0 18px 34px; counter-increment: step; }
+.step::before {
+  content: counter(step);
+  position: absolute;
+  left: 0; top: 0;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: grid; place-items: center;
+}
+.step::after {
+  content: '';
+  position: absolute;
+  left: 10.5px; top: 26px; bottom: 4px;
+  width: 1px;
+  background: var(--border);
+}
+.step:last-child { padding-bottom: 0; }
+.step:last-child::after { display: none; }
+.step__title { font-weight: 550; font-size: 13.5px; }
+.step__desc { margin-top: 2px; font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+
+/* ----------------------------------------------------------------- toasts */
+
+.toasts {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  background: var(--surface-highest);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xs);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  color: var(--text);
+  pointer-events: auto;
+  animation: toast-in var(--med) var(--ease);
+}
+.toast__action {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.toast__action:hover { background: var(--accent-soft); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+
+.drag-ghost {
+  position: fixed;
+  top: -1000px;
+  padding: 7px 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 550;
+  box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

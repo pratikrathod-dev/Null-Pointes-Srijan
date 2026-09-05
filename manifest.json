@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "Tabspace",
+  "short_name": "Tabspace",
+  "description": "Tab hoarder? Same. Drag them into folders, tag them, and actually find things again. Synced everywhere you sign in.",
+  "version": "1.7.0",
+  "minimum_chrome_version": "114",
+  "icons": {
+    "16": "icons/icon_16.png",
+    "32": "icons/icon_32.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon_16.png",
+      "32": "icons/icon_32.png",
+      "48": "icons/icon_48.png",
+      "128": "icons/icon_128.png"
+    },
+    "default_title": "Save tab to Tabspace",
+    "default_popup": "src/popup/popup.html"
+  },
+  "chrome_url_overrides": {
+    "newtab": "src/newtab/newtab.html"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/sidepanel.html"
+  },
+  "commands": {
+    "_execute_action": {
+      "description": "Stash this tab somewhere sensible",
+      "suggested_key": {
+        "default": "Alt+S"
+      }
+    },
+    "open_board": {
+      "description": "Open the board",
+      "suggested_key": {
+        "default": "Alt+B"
+      }
+    },
+    "toggle_sidepanel": {
+      "description": "Open the side panel",
+      "suggested_key": {
+        "default": "Alt+E"
+      }
+    }
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "bookmarks",
+    "favicon",
+    "sidePanel",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://zblhbrhkcftkqjhqesjp.supabase.co/*"
+  ]
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-font="inter">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tabspace</title>
+  <link rel="stylesheet" href="../newtab/newtab.css" />
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body class="sidepanel">
+  <header class="sp__brand">
+    <span class="brand__mark" id="brand-mark"></span>
+    <span class="brand__name">Tabspace</span>
+    <span class="spacer"></span>
+    <button class="icon-btn icon-btn--sm" id="btn-board" title="Open the full board"></button>
+  </header>
+
+  <header class="sp__header">
+    <div class="search">
+      <input class="field" type="search" id="filter" placeholder="Filter tabs and bookmarks" />
+    </div>
+  </header>
+
+  <div class="sp__scroll">
+    <div class="sp__section" id="head-tabs" role="button" tabindex="0">
+      <span class="sp__caret" id="caret-tabs"></span>
+      <span>Open tabs</span>
+      <span class="section-head__count" id="tab-count">0</span>
+      <span class="spacer"></span>
+      <button class="icon-btn icon-btn--sm" id="btn-close-dupes" title="Close duplicate tabs"></button>
+    </div>
+    <div id="tabs"></div>
+
+    <div class="sp__section sp__section--saved" id="head-saved" role="button" tabindex="0">
+      <span class="sp__caret" id="caret-saved"></span>
+      <span>Saved</span>
+      <span class="section-head__count" id="saved-count">0</span>
+    </div>
+    <div id="saved"></div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

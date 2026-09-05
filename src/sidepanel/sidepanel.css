@@ -1,0 +1,90 @@
+/* Side panel — inherits every token from newtab.css. */
+
+body.sidepanel {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* The panel is chrome, not board, so it takes the raised panel tone the top
+     bar and sidebar use rather than the darker board field. */
+  background: var(--surface-lowest);
+  font-size: 13px;
+}
+
+.sp__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 4px;
+}
+.sp__brand .spacer { flex: 1; }
+
+.sp__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sp__header .search { flex: 1; width: auto; }
+
+.sp__scroll { flex: 1; overflow-y: auto; padding-bottom: 16px; }
+
+.sp__section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 5px;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  position: sticky;
+  top: 0;
+  background: var(--surface-lowest);
+  z-index: 2;
+  cursor: pointer;
+  user-select: none;
+}
+.sp__section:hover { color: var(--text-2); }
+.sp__section--saved { border-top: 1px solid var(--border); margin-top: 6px; }
+.sp__section .spacer { flex: 1; }
+.sp__caret { transition: transform var(--med) var(--ease); }
+.sp__caret.is-collapsed { transform: rotate(-90deg); }
+.sp__collapsed { display: none; }
+
+.sp__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--fast) var(--ease);
+}
+.sp__row:hover { background: var(--surface-2); }
+.sp__row.is-active { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.sp__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp__row .icon-btn { opacity: 0; }
+.sp__row:hover .icon-btn { opacity: 1; }
+.sp__row--pinned .sp__title { font-style: italic; }
+
+.sp__folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--fast) var(--ease);
+}
+.sp__folder:hover { background: var(--surface-2); }
+.sp__folder.is-drop-target { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.sp__dot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 9px; }
+.sp__count { font-size: 11px; color: var(--text-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.sp__row--nested { padding-left: 30px; }
+.sp__row--deep { padding-left: 44px; }
+.sp__group { padding-left: 26px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+
+.sp__empty { padding: 20px 12px; color: var(--text-3); font-size: 12px; text-align: center; }

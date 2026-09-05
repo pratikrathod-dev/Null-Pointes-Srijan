@@ -1,0 +1,205 @@
+/* Chrome Web Store listing artwork: 1280x800, the size the store asks for.
+
+   The board inside each frame is the extension's own markup with newtab.css
+   loaded, so the folders, colours and type in the artwork are the real ones
+   rather than a drawing of them. Only the scale is overridden here: the board
+   renders at roughly half size inside the frame, and half-size type needs its
+   own values rather than a CSS transform, which would only blur it. Shots are
+   rendered at 2x and resampled down, so hairlines and small type survive. */
+
+@import url('../../src/newtab/newtab.css');
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body.shot {
+  width: 1280px;
+  height: 800px;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.shot--light { background: #fdfdfd; color: #071232; }
+body.shot--dark  { background: #0c0e12; color: #ffffff; }
+
+/* ------------------------------------------------------------ decoration */
+
+.deco { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.deco__blob { position: absolute; border-radius: 50%; }
+.shot--light .deco__blob { background: #eaf0fd; }
+.shot--dark  .deco__blob {
+  background: radial-gradient(circle, rgba(70, 107, 252, .18), transparent 70%);
+  filter: blur(26px);
+}
+.deco__dots {
+  position: absolute;
+  background-image: radial-gradient(#e4edfa 1.6px, transparent 1.6px);
+  background-size: 16px 16px;
+}
+.shot--dark .deco__dots { background-image: radial-gradient(#1b2436 1.6px, transparent 1.6px); }
+
+/* ------------------------------------------------------------------ copy */
+
+.copy { position: absolute; left: 40px; top: 44px; width: 396px; z-index: 2; }
+
+.lockup { display: flex; align-items: center; gap: 13px; margin-bottom: 70px; }
+.lockup img { width: 46px; height: 46px; display: block; }
+.lockup span { font-size: 29px; font-weight: 700; letter-spacing: -0.02em; }
+
+.headline {
+  margin: 0 0 28px;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+}
+.headline em { font-style: normal; color: #466bfc; }
+.shot--dark .headline em { color: #5b82ff; }
+
+.sub { margin: 0; font-size: 16.5px; line-height: 1.66; }
+.shot--light .sub { color: #3d4450; }
+.shot--dark  .sub { color: #a7aeba; }
+
+/* Feature list, dark layout: icon, coloured title, one line of detail. */
+.feats { margin-top: 42px; display: flex; flex-direction: column; gap: 24px; }
+.feat { display: flex; align-items: flex-start; gap: 15px; }
+.feat__icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: grid; place-items: center; flex: 0 0 38px;
+}
+.feat__icon svg { width: 21px; height: 21px; }
+.feat__title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.feat__desc { font-size: 13.5px; line-height: 1.5; color: #98a0ad; }
+.shot--light .feat__desc { color: #5a6270; }
+
+/* Feature chips, light layout: a row along the bottom. */
+.chips {
+  position: absolute; left: 98px; right: 98px; bottom: 32px;
+  display: flex; gap: 14px; z-index: 2;
+}
+.chip-card {
+  flex: 1 1 0;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  border-radius: 15px;
+}
+.chip-card__icon {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: grid; place-items: center; flex: 0 0 40px;
+}
+.chip-card__icon svg { width: 22px; height: 22px; }
+.chip-card__title { font-size: 15px; font-weight: 700; color: #101728; margin-bottom: 3px; }
+.chip-card__desc { font-size: 11.5px; line-height: 1.38; color: #5a6270; }
+
+/* ---------------------------------------------------------------- window */
+
+.frame {
+  position: absolute;
+  border-radius: 13px;
+  overflow: hidden;
+  z-index: 1;
+  /* The board's own elements are transparent -- the page colour normally comes
+     from newtab.css's body rule, which this page overrides -- so without this
+     the decorative blobs behind the frame show straight through the board. */
+  background: var(--surface);
+}
+.shot--light .frame {
+  box-shadow: 0 26px 70px rgba(20, 32, 66, .17), 0 3px 10px rgba(20, 32, 66, .07);
+}
+.shot--dark .frame {
+  box-shadow: 0 26px 80px rgba(0, 0, 0, .6);
+  border: 1px solid #232a34;
+}
+
+.frame__bar {
+  height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 13px;
+  background: #f2f4f8; border-bottom: 1px solid #e4e8ef;
+}
+.shot--dark .frame__bar { background: #171b21; border-bottom-color: #232a34; }
+.frame__dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* The board itself, at listing scale. */
+/* Full height, so the board fills the frame and the floating New folder / New
+   note buttons sit at the bottom of the window rather than halfway up it. */
+.shot .app { height: 100%; }
+.frame__body { height: 100%; }
+.frame__bar + .frame__body { height: calc(100% - 30px); }
+.shot .sidebar { width: 170px; flex: 0 0 170px; }
+.shot .brand { padding: 9px 10px 6px; gap: 6px; }
+.shot .brand__mark { width: 17px; height: 17px; flex-basis: 17px; }
+.shot .brand__name { font-size: 10px; }
+.shot .section-head { padding: 4px 10px; font-size: 7.5px; }
+.shot .section-head__count { font-size: 7px; padding: 0 4px; }
+.shot .sidebar__tools { padding: 2px 8px 6px; gap: 4px; }
+.shot .btn--sm { height: 19px; padding: 0 7px; font-size: 8px; }
+.shot .hint { margin: 0 8px 6px; padding: 6px 7px; font-size: 8px; line-height: 1.4; }
+.shot .tab-list { padding: 0 5px 8px; }
+.shot .row { padding: 4px 6px; gap: 7px; }
+.shot .row__title { font-size: 8.5px; }
+.shot .row__sub { font-size: 7px; }
+.shot .favicon { width: 17px; height: 17px; flex-basis: 17px; border-radius: 5px; }
+.shot .favicon img, .shot .favicon svg { width: 14px; height: 14px; }
+.shot .favicon--sm { width: 13px; height: 13px; flex-basis: 13px; border-radius: 4px; }
+.shot .favicon--sm img, .shot .favicon--sm svg { width: 11px; height: 11px; }
+.shot .topbar { padding: 6px 10px; gap: 5px; }
+.shot .space-tab { height: 20px; padding: 0 10px; font-size: 9px; }
+.shot .search { width: 155px; }
+.shot .search .field { height: 21px; font-size: 8.5px; padding-left: 24px; }
+.shot .search .icon { left: 8px; width: 11px; height: 11px; }
+.shot .icon-btn { width: 20px; height: 20px; }
+.shot .icon-btn svg { width: 11px; height: 11px; }
+.shot .account { height: 21px; padding: 0 9px 0 3px; font-size: 8.5px; gap: 5px; }
+.shot .account__avatar { width: 15px; height: 15px; font-size: 8px; }
+.shot .sync-pill { font-size: 8px; gap: 4px; }
+.shot .sync-dot { width: 5px; height: 5px; flex-basis: 5px; }
+.shot .tagbar { padding: 5px 10px; gap: 4px; }
+.shot .chip { height: 18px; padding: 0 8px; font-size: 8px; }
+.shot .board { --board-gap: 9px; padding: 10px 10px 40px; }
+.shot .board__col { max-width: none; }
+.shot .folder { border-radius: 9px; }
+.shot .folder__head { padding: 5px 6px; gap: 4px; }
+.shot .folder__title { font-size: 8.5px; }
+.shot .folder__count { font-size: 7.5px; }
+.shot .folder__body { padding: 3px; }
+.shot .folder__head .icon-btn--sm { width: 13px; height: 13px; }
+.shot .folder__head .icon-btn--sm svg { width: 9px; height: 9px; }
+.shot .item { padding: 3px 4px; gap: 6px; border-radius: 5px; }
+.shot .item__title { font-size: 8px; }
+.shot .item .icon-btn--sm { width: 12px; height: 12px; }
+.shot .item .icon-btn--sm svg { width: 8px; height: 8px; }
+.shot .item__tag { font-size: 6.5px; padding: 0 4px; }
+.shot .add-folder { min-height: 30px; font-size: 8.5px; border-radius: 9px; gap: 5px; }
+.shot .add-folder svg { width: 10px; height: 10px; }
+.shot .sticker { border-radius: 9px; padding: 7px 8px; width: 118px; min-height: 58px; font-size: 9px; }
+.shot .statusbar { bottom: 9px; gap: 5px; }
+.shot .statusbar .btn { height: 19px; padding: 0 9px; font-size: 8px; }
+
+/* ------------------------------------------------------------- call-out */
+
+.callout {
+  position: absolute; z-index: 3;
+  border-radius: 13px;
+  padding: 14px 15px;
+  background: #16191d;
+  border: 1px solid #262d38;
+  box-shadow: 0 22px 55px rgba(0, 0, 0, .55);
+}
+.shot--light .callout {
+  background: #fff; border-color: #e2e7ef;
+  box-shadow: 0 22px 55px rgba(20, 32, 66, .18);
+}
+.callout__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+.callout__title { font-size: 14px; font-weight: 700; }
+.callout__row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; }
+.callout__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; }
+.callout__name { flex: 1; }
+.callout__count { color: #7e8794; font-variant-numeric: tabular-nums; font-size: 11.5px; }
+.callout__note {
+  margin-top: 11px; padding: 10px 12px; border-radius: 9px;
+  background: rgba(70, 107, 252, .12);
+  border: 1px solid rgba(70, 107, 252, .30);
+}
+.callout__note b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+.callout__note span { font-size: 11.5px; color: #98a0ad; }
+.shot--light .callout__note span { color: #5a6270; }

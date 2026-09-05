@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Tabspace — signups</title>
+<style>
+/* Same Material tokens the extension uses, so this reads as part of Tabspace.
+   Light only, on purpose: this is an admin page that gets read in daylight next
+   to the Supabase dashboard, and following the system theme meant it flipped
+   dark on machines set that way. The chart blue (#0b57d0) is validated against
+   this surface for contrast and chroma. */
+:root {
+  --surface: #eaeef4;
+  --panel: #ffffff;
+  --panel-2: #f1f4f9;
+  --border: #dfe4ec;
+  --ink: #1f1f1f;
+  --ink-2: #444746;
+  --ink-3: #747775;
+  --accent: #0b57d0;
+  --accent-soft: #d3e3fd;
+  --good: #146c2e;
+  --bad: #b3261e;
+  --grid: #e4e8ef;
+  --shadow: 0 1px 2px rgba(0,0,0,.16), 0 2px 6px 2px rgba(0,0,0,.06);
+  --r: 14px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 28px 24px 56px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 15px/1.5 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+header { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+header img { width: 36px; height: 36px; }
+header h1 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+header .spacer { flex: 1; }
+#who { font-size: 13px; color: var(--ink-3); }
+
+button {
+  font: inherit; font-weight: 550; cursor: pointer;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--accent);
+  padding: 9px 18px;
+  transition: background .15s, border-color .15s;
+}
+button:hover { border-color: var(--ink-3); }
+button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+button.primary:hover { filter: brightness(1.08); }
+button:disabled { opacity: .55; cursor: default; }
+
+/* --------------------------------------------------------------- sign in */
+.gate { max-width: 380px; margin: 8vh auto 0; }
+.gate h2 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.02em; }
+.gate p { color: var(--ink-2); font-size: 14px; margin: 0 0 22px; }
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 22px; box-shadow: var(--shadow);
+}
+label { display: block; font-size: 13px; font-weight: 600; margin: 0 0 6px; color: var(--ink-2); }
+input {
+  width: 100%; font: inherit; padding: 11px 13px; margin-bottom: 16px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel-2); color: var(--ink);
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+.err { color: var(--bad); font-size: 13px; min-height: 1.2em; margin: 10px 0 0; }
+
+/* ----------------------------------------------------------------- tiles */
+.hero {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 26px 28px; margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap;
+}
+.hero__num { font-size: 62px; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+.hero__lab { font-size: 14px; color: var(--ink-2); margin-bottom: 9px; }
+.hero__side { margin-left: auto; text-align: right; font-size: 13px; color: var(--ink-3); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+}
+.tile__num { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.tile__lab { font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
+
+/* ----------------------------------------------------------------- chart */
+.panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px 22px 16px; box-shadow: var(--shadow);
+}
+.panel__head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.panel__title { font-size: 15px; font-weight: 700; }
+.panel__sub { font-size: 12.5px; color: var(--ink-3); }
+.panel__head .spacer { flex: 1; }
+.linkish {
+  background: none; border: 0; padding: 0; color: var(--accent);
+  font-size: 13px; text-decoration: underline; text-underline-offset: 3px;
+}
+#chart { width: 100%; height: 210px; display: block; overflow: visible; }
+.tip {
+  position: fixed; pointer-events: none; z-index: 9;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 9px; padding: 7px 10px; box-shadow: var(--shadow);
+  font-size: 12.5px; opacity: 0; transition: opacity .1s;
+}
+.tip b { font-variant-numeric: tabular-nums; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+th { color: var(--ink-3); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+td:last-child, th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+#tableWrap { display: none; max-height: 320px; overflow: auto; }
+#peopleWrap { max-height: 340px; overflow: auto; }
+#peopleWrap td:nth-child(1) { font-variant-numeric: normal; }
+#peopleWrap td:nth-child(2), #peopleWrap td:nth-child(3),
+#peopleWrap th:nth-child(2), #peopleWrap th:nth-child(3) { text-align: right; white-space: nowrap; }
+.filter {
+  width: 190px; margin: 0; padding: 7px 11px; font-size: 13px;
+  border-radius: 999px; background: var(--panel-2);
+}
+.note { margin: 12px 0 2px; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+.empty { padding: 22px 10px; text-align: center; color: var(--ink-3); font-size: 13.5px; }
+
+.foot { margin-top: 22px; font-size: 12.5px; color: var(--ink-3); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- sign in ------------------------------------------------------------ -->
+  <section class="gate" id="gate">
+    <h2>Tabspace signups</h2>
+    <p>Sign in with the Tabspace account that <code>setup.sql</code> made admin.</p>
+    <form class="card" id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required />
+      <label for="pass">Password</label>
+      <input id="pass" type="password" autocomplete="current-password" required />
+      <button class="primary" id="loginBtn" style="width:100%">Sign in</button>
+      <p class="err" id="loginErr"></p>
+    </form>
+  </section>
+
+  <!-- dashboard ----------------------------------------------------------- -->
+  <div id="app" hidden>
+    <header>
+      <img src="../icons/icon.svg" alt="" />
+      <h1>Tabspace signups</h1>
+      <span class="spacer"></span>
+      <span id="who"></span>
+      <button id="refresh">Refresh</button>
+      <button id="signout">Sign out</button>
+    </header>
+
+    <div class="hero">
+      <div>
+        <div class="hero__lab">People signed up</div>
+        <div class="hero__num" id="total">—</div>
+      </div>
+      <div class="hero__side" id="heroSide"></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <span class="panel__title">Signups per day</span>
+        <span class="panel__sub" id="chartRange">all time</span>
+        <span class="spacer"></span>
+        <button class="linkish" id="toggleTable">Show table</button>
+      </div>
+      <svg id="chart" role="img" aria-label="Daily signups for the whole life of the project"></svg>
+      <div id="tableWrap">
+        <table>
+          <thead><tr><th>Day</th><th>Signups</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="panel__head">
+        <span class="panel__title">What people are building</span>
+        <span class="panel__sub">totals across every board</span>
+      </div>
+      <div class="tiles" id="shape" style="margin:14px 0 0"></div>
+      <p class="note">
+        Counts only. Nobody's folders, links, tags or notes are read — the query
+        walks the boards to size them and selects no content, because the privacy
+        policy promises an account can read only its own row.
+      </p>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="panel__head">
+        <span class="panel__title">Who signed up</span>
+        <span class="panel__sub" id="peopleCount"></span>
+        <span class="spacer"></span>
+        <input id="filter" type="search" placeholder="Filter by email" class="filter" />
+        <button id="exportAll">Export all boards</button>
+      </div>
+      <div id="peopleWrap">
+        <table>
+          <thead><tr><th>Email</th><th>Signed up</th><th>Last seen</th><th>Board</th></tr></thead>
+          <tbody id="peopleBody"></tbody>
+        </table>
+      </div>
+      <p class="note">
+        <b>Downloading a board gives you that person's saved links.</b> Your
+        published privacy policy currently tells users the opposite: that an account
+        can read only its own row, and that their data is never shared. Update and
+        republish it before relying on this, or the promise and the code disagree.
+        Passwords are in neither place and cannot be: Supabase stores a bcrypt hash,
+        never the password itself, so there is nothing to read back, for anyone.
+      </p>
+    </div>
+
+    <p class="foot" id="foot"></p>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+// Copied from src/lib/supabase-config.js rather than imported from it. An ES
+// module import will not load over file://, and this page has to open by
+// double-clicking it -- needing a web server to look at your own signup count
+// is a silly thing to need.
+//
+// The anon key is public by design: it is compiled into the extension already,
+// so every user has it. It grants nothing on its own -- reading these numbers
+// takes a signed-in session whose address is in the app_admins table.
+const SUPABASE_URL = 'https://zblhbrhkcftkqjhqesjp.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpibGhicmhrY2Z0a3FqaHFlc2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NjI2NjgsImV4cCI6MjEwMzMzODY2OH0.OwPzy0qoSaF-GEHDCnEs1IOZ4LD0I1epoHnNVvDlOy0'
+
+const $ = (id) => document.getElementById(id)
+const KEY = 'tabspace-dash-session'
+
+let session = null
+try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null') } catch { session = null }
+
+const api = (path, opts = {}) => fetch(`${SUPABASE_URL}${path}`, {
+  ...opts,
+  headers: {
+    apikey: SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    ...opts.headers,
+  },
+})
+
+// ------------------------------------------------------------------ auth ---
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const btn = $('loginBtn')
+  btn.disabled = true
+  $('loginErr').textContent = ''
+  try {
+    const res = await api('/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      body: JSON.stringify({ email: $('email').value.trim(), password: $('pass').value }),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error_description || body.msg || 'Wrong email or password.')
+    session = body
+    sessionStorage.setItem(KEY, JSON.stringify(session))
+    await start()
+  } catch (err) {
+    $('loginErr').textContent = err.message
+  } finally {
+    btn.disabled = false
+  }
+})
+
+$('signout').addEventListener('click', () => {
+  sessionStorage.removeItem(KEY)
+  session = null
+  location.reload()
+})
+
+// ------------------------------------------------------------------ data ---
+
+async function load() {
+  const res = await api('/rest/v1/rpc/tabspace_stats', { method: 'POST', body: '{}' })
+  if (res.status === 401) throw new Error('expired')
+  const body = await res.json()
+  if (!res.ok) {
+    // The function raises this when the signed-in address is not the admin one.
+    if (String(body.message || '').includes('not authorised')) {
+      throw new Error('That account is not an admin. Add it: insert into public.app_admins (email) values (…)')
+    }
+    if (String(body.message || '').includes('tabspace_stats')) {
+      throw new Error('The tabspace_stats function is missing — run dashboard/setup.sql first.')
+    }
+    throw new Error(body.message || body.hint || 'Could not load the numbers.')
+  }
+  return body
+}
+
+const nf = new Intl.NumberFormat()
+const dayFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
+const whenFmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
+function ago(iso) {
+  if (!iso) return 'never'
+  const mins = Math.round((Date.now() - new Date(iso)) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} min ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs} h ago`
+  return `${Math.round(hrs / 24)} d ago`
+}
+
+function render(d) {
+  lastData = d
+  $('total').textContent = nf.format(d.total_users)
+  $('heroSide').innerHTML = d.total_users
+    ? `Newest signup ${ago(d.last_signup_at)}<br>First one ${whenFmt.format(new Date(d.first_signup_at))}`
+    : 'Nobody yet. The first one is the hard one.'
+
+  const tiles = [
+    ['New today', d.new_24h],
+    ['New this week', d.new_7d],
+    ['New this month', d.new_30d],
+    ['Came back this week', d.active_7d],
+    ['Saved a board', d.boards],
+    ['Signed up, never returned', d.never_signed_in],
+  ]
+  $('tiles').innerHTML = tiles.map(([lab, n]) =>
+    `<div class="tile"><div class="tile__num">${nf.format(n ?? 0)}</div><div class="tile__lab">${lab}</div></div>`).join('')
+
+  drawChart(d.daily || [])
+  const days = (d.daily || []).length
+  $('chartRange').textContent = days ? `all time · ${days} days` : 'all time'
+
+  $('tableBody').innerHTML = (d.daily || []).slice().reverse().map((r) =>
+    `<tr><td>${dayFmt.format(new Date(r.day + 'T00:00:00'))}</td><td>${nf.format(r.signups)}</td></tr>`).join('')
+
+  const sh = d.shape || {}
+  $('shape').innerHTML = [
+    ['Bookmarks saved', nf.format(sh.bookmarks ?? 0)],
+    ['Folders made', nf.format(sh.folders ?? 0)],
+    ['Spaces made', nf.format(sh.spaces ?? 0)],
+    ['Notes written', nf.format(sh.notes ?? 0)],
+    ['Bookmarks per board', sh.avg_bookmarks ?? 0],
+    ['Biggest board', nf.format(sh.max_bookmarks ?? 0)],
+    ['Boards still empty', nf.format(sh.empty_boards ?? 0)],
+  ].map(([lab, n]) =>
+    `<div class="tile"><div class="tile__num">${n}</div><div class="tile__lab">${lab}</div></div>`).join('')
+
+  renderPeople(d.people || [])
+
+  $('foot').textContent = `Read ${whenFmt.format(new Date(d.generated_at))}. `
++ 'The panels above read no board content; the JSON buttons do.'
+}
+
+// ---------------------------------------------------------------- people ---
+// Escaped, not interpolated: an email address is user-supplied text, and it
+// arrives here straight from the sign-up form.
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+function renderPeople(people) {
+  const q = $('filter').value.trim().toLowerCase()
+  const rows = q ? people.filter((p) => p.email.toLowerCase().includes(q)) : people
+
+  $('peopleCount').textContent = people.length
+    ? (q ? `${rows.length} of ${people.length}` : `${people.length} newest first`)
+    : ''
+
+  $('peopleBody').innerHTML = rows.length
+    ? rows.map((p) => `<tr>
+        <td>${esc(p.email)}</td>
+        <td>${whenFmt.format(new Date(p.created_at))}</td>
+        <td>${p.last_sign_in_at ? ago(p.last_sign_in_at) : 'never'}</td>
+        <td><button class="linkish" data-export="${esc(p.email)}">JSON</button></td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" class="empty">${people.length ? 'No address matches that.' : 'Nobody has signed up yet.'}</td></tr>`
+}
+
+// ----------------------------------------------------------------- chart ---
+// One series, so no legend: the panel title names it. Bars carry a 2px surface
+// gap and 4px rounded tops anchored to the baseline; only the peak is labelled
+// directly, the rest are on hover and in the table.
+
+function drawChart(daily) {
+  const svg = $('chart')
+  svg.replaceChildren()
+  if (!daily.length) return
+
+  const W = svg.clientWidth || 900
+  const H = 210
+  const padL = 30, padR = 8, padT = 20, padB = 22
+  const plotW = W - padL - padR
+  const plotH = H - padT - padB
+  const max = Math.max(1, ...daily.map((d) => d.signups))
+  const step = plotW / daily.length
+  // Capped, not just step-2: a board a few days old has three data points, and
+  // a bar 260px wide reads as a block of colour rather than a measurement.
+  const bw = Math.min(30, Math.max(2, step - 2))          // the 2px surface gap
+  const ink3 = getComputedStyle(document.body).getPropertyValue('--ink-3').trim()
+  const grid = getComputedStyle(document.body).getPropertyValue('--grid').trim()
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim()
+  const NS = 'http://www.w3.org/2000/svg'
+  const add = (tag, attrs) => {
+    const n = document.createElementNS(NS, tag)
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v)
+    svg.append(n)
+    return n
+  }
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
+
+  // Recessive gridlines: three of them, labelled at the axis only.
+  const ticks = max <= 4 ? [0, max] : [0, Math.round(max / 2), max]
+  for (const t of ticks) {
+    const y = padT + plotH - (t / max) * plotH
+    add('line', { x1: padL, x2: W - padR, y1: y, y2: y, stroke: grid, 'stroke-width': 1 })
+    const lab = add('text', { x: padL - 7, y: y + 4, 'text-anchor': 'end', fill: ink3, 'font-size': 11 })
+    lab.textContent = String(t)
+  }
+
+  const peak = daily.reduce((a, b) => (b.signups > a.signups ? b : a), daily[0])
+  daily.forEach((d, i) => {
+    const h = (d.signups / max) * plotH
+    const x = padL + i * step + (step - bw) / 2
+    const y = padT + plotH - h
+    if (d.signups > 0) {
+      add('rect', {
+        x, y, width: bw, height: Math.max(h, 2),
+        rx: Math.min(4, bw / 2), fill: accent,
+      })
+    }
+    // A wide invisible hit target: the bars are ~8px, the pointer is not.
+    const hit = add('rect', { x: padL + i * step, y: padT, width: step, height: plotH, fill: 'transparent' })
+    hit.addEventListener('pointerenter', (e) => showTip(e, d))
+    hit.addEventListener('pointerleave', hideTip)
+  })
+
+  // Direct-label the peak only; every other value is on hover and in the table.
+  if (peak.signups > 0) {
+    const i = daily.indexOf(peak)
+    const x = padL + i * step + step / 2
+    const y = padT + plotH - (peak.signups / max) * plotH
+    const t = add('text', {
+      x, y: y - 7, 'text-anchor': 'middle', fill: ink3, 'font-size': 11, 'font-weight': 600,
+    })
+    t.textContent = String(peak.signups)
+  }
+
+  // Axis: first, middle and last day.
+  for (const i of [0, Math.floor(daily.length / 2), daily.length - 1]) {
+    const t = add('text', {
+      x: padL + i * step + step / 2, y: H - 6,
+      'text-anchor': i === 0 ? 'start' : i === daily.length - 1 ? 'end' : 'middle',
+      fill: ink3, 'font-size': 11,
+    })
+    t.textContent = dayFmt.format(new Date(daily[i].day + 'T00:00:00'))
+  }
+}
+
+function showTip(e, d) {
+  const tip = $('tip')
+  tip.innerHTML = `${dayFmt.format(new Date(d.day + 'T00:00:00'))} — <b>${d.signups}</b> signup${d.signups === 1 ? '' : 's'}`
+  tip.style.opacity = '1'
+  tip.style.left = `${Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 10)}px`
+  tip.style.top = `${e.clientY - 34}px`
+}
+function hideTip() { $('tip').style.opacity = '0' }
+
+// ------------------------------------------------------------------ boot ---
+
+async function start() {
+  try {
+    const data = await load()
+    $('gate').hidden = true
+    $('app').hidden = false
+    $('who').textContent = session?.user?.email ?? ''
+    render(data)
+  } catch (err) {
+    if (err.message === 'expired') {
+      sessionStorage.removeItem(KEY)
+      session = null
+      $('gate').hidden = false
+      $('app').hidden = true
+      $('loginErr').textContent = 'That session expired — sign in again.'
+      return
+    }
+    $('gate').hidden = false
+    $('app').hidden = true
+    $('loginErr').textContent = err.message
+  }
+}
+
+$('refresh').addEventListener('click', async (e) => {
+  e.target.disabled = true
+  try { render(await load()) } catch (err) { alert(err.message) } finally { e.target.disabled = false }
+})
+
+$('filter').addEventListener('input', () => renderPeople(lastData?.people || []))
+
+// ---------------------------------------------------------------- export ---
+// Downloads a board in the same shape the extension's own backup writes, so a
+// file can be handed back to the person it belongs to, or re-imported.
+
+// The extension's importer reads `spaces` off the top level of the file
+// (parseLegacyBackup in src/lib/model.js throws 'no "spaces" array' otherwise),
+// so a downloaded board has to be the backup shape itself -- not the database
+// row with the board nested under `state`. `account` is extra; the importer
+// ignores keys it does not know.
+function toBackup(row) {
+  const st = row.state || {}
+  return {
+    isTabspace: true,
+    version: st.version ?? 2,
+    exportedAt: row.exported_at ?? new Date().toISOString(),
+    spaces: st.spaces ?? [],
+    settings: st.settings ?? {},
+    account: { email: row.email, rev: row.rev, updatedAt: row.updated_at },
+  }
+}
+
+async function exportBoards(email) {
+  const res = await api('/rest/v1/rpc/tabspace_export', {
+    method: 'POST',
+    body: JSON.stringify({ p_email: email ?? null }),
+  })
+  const body = await res.json()
+  if (!res.ok) {
+    if (String(body.message || '').includes('tabspace_export')) {
+      throw new Error('The tabspace_export function is missing - re-run dashboard/setup.sql.')
+    }
+    throw new Error(body.message || 'Export failed.')
+  }
+  if (!Array.isArray(body) || !body.length) throw new Error('That account has no saved board.')
+
+  const stamp = new Date().toISOString().slice(0, 10)
+  const name = email ? `tabspace-${email.replace(/[^a-z0-9]+/gi, '-')}-${stamp}.json`
+                     : `tabspace-all-boards-${stamp}.json`
+  // One account downloads as a file the extension can import directly. All
+  // accounts is an archive of those same objects, which is not itself importable
+  // -- there is no such thing as a backup containing several people's boards.
+  const payload = email ? toBackup(body[0]) : body.map(toBackup)
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+$('peopleBody').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-export]')
+  if (!btn) return
+  btn.disabled = true
+  const was = btn.textContent
+  btn.textContent = '...'
+  try { await exportBoards(btn.dataset.export) } catch (err) { alert(err.message) }
+  finally { btn.disabled = false; btn.textContent = was }
+})
+
+$('exportAll').addEventListener('click', async (e) => {
+  e.target.disabled = true
+  try { await exportBoards(null) } catch (err) { alert(err.message) }
+  finally { e.target.disabled = false }
+})
+
+$('toggleTable').addEventListener('click', () => {
+  const wrap = $('tableWrap')
+  const open = wrap.style.display === 'block'
+  wrap.style.display = open ? 'none' : 'block'
+  $('chart').style.display = open ? 'block' : 'none'
+  $('toggleTable').textContent = open ? 'Show table' : 'Show chart'
+})
+
+// Redraw from the numbers already in hand. The chart is sized in pixels, so it
+// has to be rebuilt on resize -- but that is a repaint, not a reason to go back
+// to the database.
+let lastData = null
+let resizeTimer = null
+addEventListener('resize', () => {
+  if (!lastData || $('app').hidden) return
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => drawChart(lastData.daily || []), 120)
+})
+
+if (session) start()
+</script>
+</body>
+</html>

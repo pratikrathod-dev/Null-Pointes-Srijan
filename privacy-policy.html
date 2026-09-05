@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Tabspace</title>
+<meta name="description" content="Privacy policy for the Tabspace Chrome extension.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f6f7f9;
+    --border: #e2e5ea;
+    --text: #1b1f24;
+    --muted: #5b6472;
+    --accent: #3b5bdb;
+    --accent-soft: #eef2ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c;
+      --panel: #1c2027;
+      --border: #2c323c;
+      --text: #e8eaee;
+      --muted: #a2abb8;
+      --accent: #8ea4ff;
+      --accent-soft: #1e2434;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 48px 22px 96px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 26px; margin-bottom: 34px; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.02em; }
+  h2 {
+    font-size: 1.18rem; margin: 42px 0 12px; letter-spacing: -0.01em;
+    padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin: 24px 0 8px; }
+  .meta { color: var(--muted); font-size: 0.9rem; margin: 0; }
+  .meta span { display: inline-block; margin-right: 18px; }
+  .summary {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 0 0 8px;
+  }
+  .summary p { margin: 0 0 10px; }
+  .summary p:last-child { margin-bottom: 0; }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  code {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em;
+  }
+  .table-scroll { overflow-x: auto; margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 0.94rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--panel); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  a { color: var(--accent); }
+  .never li::marker { content: "\2715\00a0\00a0"; }
+  footer {
+    margin-top: 54px; padding-top: 22px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Tabspace — Privacy Policy</h1>
+  <p class="meta">
+    <span><strong>Last updated:</strong> 27 August 2026</span>
+    <span><strong>Applies to:</strong> Tabspace for Chrome, version 1.6.0 and later</span>
+  </p>
+</header>
+
+<div class="summary">
+  <p><strong>The short version.</strong> Tabspace keeps your board — spaces, folders, bookmarks, tags and notes — on your own computer. Nothing leaves your device unless you deliberately turn on sync.</p>
+  <p>There is no analytics, no telemetry, no advertising, and no tracking of any kind. Your data is never sold, rented or shared with anyone, and it is never used for advertising or to train any model.</p>
+  <p>If you choose to create an account, your board is stored in a private, per-account row on Supabase so it can follow you to your other browsers. You can delete it at any time.</p>
+</div>
+
+<h2>1. Who this policy is from</h2>
+<p>Tabspace is an independent Chrome extension. This policy describes what the extension does with information on your device and, if you enable sync, on our sync backend. It covers only the Tabspace browser extension — not any website you happen to visit.</p>
+
+<h2>2. What information Tabspace handles</h2>
+
+<h3>Your board content</h3>
+<p>This is the information you create by using the extension:</p>
+<ul>
+  <li>Page titles and URLs of the tabs and bookmarks you save</li>
+  <li>Tags, notes and stickers you write</li>
+  <li>The names and arrangement of your spaces, folders and groups</li>
+  <li>Your preferences — theme, layout and other display settings</li>
+</ul>
+<p>Tabspace also reads two things from your browser so it can show them to you, and stores neither unless you act:</p>
+<ul>
+  <li><strong>Your open tabs in the current window</strong>, listed in the sidebar so you can drag one onto the board. A tab is only saved when you save it.</li>
+  <li><strong>Your existing Chrome bookmarks</strong>, read when you choose to import them, so they can be shown as an importable tree. Nothing is read from your bookmarks unless you open the import screen.</li>
+</ul>
+<p>Tabspace does <strong>not</strong> read the content of the pages you visit. It has no content scripts and no permission to access any website you browse.</p>
+
+<h3>Account information (only if you enable sync)</h3>
+<p>Sync is off by default. If you turn it on, you create an account with an email address and a password. The email address identifies your account and lets you recover it; the password is handled by our authentication provider and is never visible to, or stored by, the extension in readable form.</p>
+
+<h3>Technical information</h3>
+<ul>
+  <li><strong>A random device identifier</strong>, generated locally. It exists so a device can recognise and ignore the echo of its own sync push. It is a random string — not tied to you, your hardware, or any advertising identifier.</li>
+  <li><strong>Remembered sign-in addresses</strong>, stored in the extension's own local storage so the sign-in box can suggest the account you use most. This is a list of email addresses and use counts on your machine only. No password, token or session is ever written there.</li>
+</ul>
+
+<h2>3. Where your information is stored</h2>
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>Location</th><th>What goes there</th><th>When</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>chrome.storage.local</code></td>
+      <td>Your full board, your settings, and your sync session token if signed in</td>
+      <td>Always. This copy is authoritative and stays on your device.</td>
+    </tr>
+    <tr>
+      <td><code>chrome.storage.sync</code></td>
+      <td>A compact copy of your board</td>
+      <td>Only if you enable browser sync. Chrome carries it through your own Google account; we never see it.</td>
+    </tr>
+    <tr>
+      <td>Supabase (our sync backend)</td>
+      <td>Your board and your account email address</td>
+      <td>Only if you create a Tabspace account and sign in.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p>If you never enable sync, no information ever leaves your computer.</p>
+
+<h2>4. Browser permissions and why each one is needed</h2>
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr><th>Permission</th><th>Why Tabspace asks for it</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>storage</code></td><td>To save your board and settings on your device, and to sync them through Chrome if you enable that.</td></tr>
+    <tr><td><code>unlimitedStorage</code></td><td>So a large board is never truncated by the default storage cap.</td></tr>
+    <tr><td><code>tabs</code></td><td>To list the tabs open in the current window so you can drag one onto the board, and to open or focus the board itself.</td></tr>
+    <tr><td><code>bookmarks</code></td><td>To read your existing Chrome bookmarks when you choose to import them.</td></tr>
+    <tr><td><code>favicon</code></td><td>To display the site icon next to a saved bookmark, using the icon Chrome has already cached locally.</td></tr>
+    <tr><td><code>sidePanel</code></td><td>To show the Tabspace side panel.</td></tr>
+    <tr><td>Host access to our Supabase project</td><td>To send and receive your board while you are signed in to sync. This is the only network address the extension is permitted to contact.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. What Tabspace never does</h2>
+<ul class="never">
+  <li>No analytics, telemetry, usage statistics or crash reporting</li>
+  <li>No advertising, ad networks or advertising identifiers</li>
+  <li>No tracking of your browsing history or the pages you visit</li>
+  <li>No reading of, or injecting into, the websites you open</li>
+  <li>No selling, renting or sharing of your data with anyone</li>
+  <li>No use of your data for creditworthiness or lending purposes</li>
+  <li>No use of your data to train machine learning models</li>
+  <li>No transfer of your data to anyone other than the sync provider named below, and then only when you have signed in</li>
+</ul>
+<p>Tabspace collects and uses your information for one purpose only: providing the single feature described in its store listing — saving and organising your tabs and bookmarks, and optionally syncing them between your own browsers.</p>
+
+<h2>6. Third-party service</h2>
+<p>Tabspace uses <a href="https://supabase.com" rel="noopener noreferrer">Supabase</a> — and only Supabase — to store your board when you are signed in. Supabase acts purely as our hosting and authentication provider; it does not use your board content for its own purposes.</p>
+<p>Access is enforced by row-level security in the database: an account can read and write only its own row. Signing in to one account never grants any visibility into another. All traffic is over HTTPS.</p>
+<p>Supabase's own handling of data is described in their <a href="https://supabase.com/privacy" rel="noopener noreferrer">privacy policy</a>.</p>
+
+<h2>7. Keeping and deleting your information</h2>
+<p>Your board is kept for as long as you keep using Tabspace. You are always in control of removing it:</p>
+<ul>
+  <li><strong>Remove one item</strong> — delete it on the board; the change is pushed away on the next sync.</li>
+  <li><strong>Stop syncing</strong> — sign out. Your board stays on the device you are using.</li>
+  <li><strong>Delete everything stored remotely</strong> — email the address below from your account's email address and we will permanently delete your stored board and your account. Deletion requests are actioned within 30 days.</li>
+  <li><strong>Remove everything locally</strong> — uninstall the extension. Chrome deletes the extension's local and synced storage along with it.</li>
+</ul>
+
+<h2>8. Security</h2>
+<p>All network traffic uses HTTPS. Passwords are hashed by our authentication provider and are never stored by the extension in readable form. Access to stored boards is restricted per account at the database level rather than in the extension, so a bug in the extension cannot expose another person's board. No system is perfectly secure, but the surface here is deliberately small: one backend, no third-party scripts, and no access to the pages you browse.</p>
+
+<h2>9. Children</h2>
+<p>Tabspace is not directed at children under 13, and we do not knowingly collect information from them.</p>
+
+<h2>10. Your rights</h2>
+<p>Depending on where you live, you may have the right to access, correct, export or delete the information held about you, and to withdraw consent to sync at any time. Because your board lives on your own device and is visible inside the extension, access and correction are immediate. For export or deletion of remotely stored data, use the contact address below.</p>
+
+<h2>11. Changes to this policy</h2>
+<p>If this policy changes in a way that affects how your information is handled, the "Last updated" date at the top will change and the revised policy will be published at this same address before the change takes effect.</p>
+
+<h2>12. Contact</h2>
+<p>Questions, deletion requests, or anything else about privacy in Tabspace:<br>
+<a href="mailto:falconmonks@gmail.com">falconmonks@gmail.com</a></p>
+
+<footer>
+  Tabspace — Privacy Policy · Last updated 27 August 2026
+</footer>
+
+</div>
+</body>
+</html>

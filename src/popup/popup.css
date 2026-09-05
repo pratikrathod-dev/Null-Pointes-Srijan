@@ -1,0 +1,53 @@
+/* Popup — inherits every token from newtab.css. */
+
+body.popup {
+  width: 340px;
+  max-height: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-lowest);
+  overflow: hidden;
+}
+
+.popup__tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-2);
+  border-radius: var(--r);
+}
+.popup__tab-body { min-width: 0; flex: 1; }
+.popup__tab-title { font-size: 13px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.popup__tab-host { font-size: 11.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.popup__folders { flex: 1; overflow-y: auto; max-height: 320px; display: flex; flex-direction: column; gap: 2px; }
+
+.popup__folder {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.popup__folder:hover, .popup__folder.is-active { background: var(--surface-2); }
+.popup__folder.is-active { box-shadow: inset 0 0 0 1px var(--accent-border); }
+.popup__dot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; }
+.popup__folder-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.popup__folder-space { font-size: 11px; color: var(--text-3); }
+.popup__saved { color: var(--success); font-size: 11px; font-weight: 600; }
+
+.popup__footer { display: flex; align-items: center; gap: 8px; }
+.popup__footer .spacer { flex: 1; }
+.popup__empty { padding: 24px 8px; text-align: center; color: var(--text-3); font-size: 12.5px; }

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-font="inter">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tabspace</title>
+  <link rel="stylesheet" href="newtab.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand__mark" id="brand-mark"></span>
+        <span class="brand__name">Tabspace</span>
+      </div>
+
+      <div class="section-head">
+        <span>Open tabs</span>
+        <span class="section-head__count" id="tab-count">0</span>
+        <span class="spacer"></span>
+      </div>
+
+      <div class="sidebar__tools">
+        <button class="btn btn--quiet btn--sm" id="btn-stash">Stash all</button>
+        <button class="btn btn--quiet btn--sm" id="btn-sort-tabs">Sort</button>
+        <button class="btn btn--quiet btn--sm" id="btn-close-dupes">Dedupe</button>
+      </div>
+
+      <div class="hint">Drag a tab onto a folder to save it. Shift-click to grab several at once.</div>
+      <div class="tab-list" id="tab-list"></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-sidebar" title="Show or hide the tab sidebar"></button>
+        <div class="topbar__divider"></div>
+        <div class="spaces" id="spaces"></div>
+        <div class="search">
+          <input class="field" type="search" id="search" placeholder="Search everything" />
+        </div>
+        <span class="sync-pill" id="sync-pill"></span>
+        <button class="account" id="btn-account"></button>
+        <div class="topbar__divider"></div>
+        <button class="icon-btn" id="btn-tags" title="Manage tags"></button>
+        <button class="icon-btn" id="btn-theme" title="Switch theme"></button>
+        <button class="icon-btn" id="btn-settings" title="Settings"></button>
+      </header>
+
+      <div class="tagbar" id="tagbar"></div>
+
+      <div class="board-scroll" id="board-scroll">
+        <div class="board-wrap" id="board-wrap">
+          <div class="board" id="board"></div>
+          <div class="canvas-layer" id="canvas"></div>
+        </div>
+      </div>
+
+      <footer class="statusbar">
+        <button class="btn btn--quiet btn--sm" id="btn-add-folder">New folder</button>
+        <button class="btn btn--quiet btn--sm" id="btn-add-note">New note</button>
+      </footer>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script type="module" src="newtab.js"></script>
+</body>
+</html>

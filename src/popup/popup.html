@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-font="inter">
+<head>
+  <meta charset="UTF-8" />
+  <title>Save to Tabspace</title>
+  <link rel="stylesheet" href="../newtab/newtab.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body class="popup">
+  <div class="popup__tab" id="current-tab"></div>
+  <div class="search" style="width:100%">
+    <input class="field" type="search" id="filter" placeholder="Find a folder" autofocus />
+  </div>
+  <div class="popup__folders" id="folders"></div>
+  <div class="popup__footer">
+    <button class="btn btn--quiet btn--sm" id="btn-new-folder">New folder</button>
+    <span class="spacer"></span>
+    <button class="btn btn--quiet btn--sm" id="btn-open-board">Open board</button>
+  </div>
+  <div class="toasts" id="toasts"></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!-- Tabspace mark, cut down for 32px.
+
+     A small icon is a silhouette, not a picture. Three stacked cards become two,
+     so the remaining step is wide enough to survive a pixel of edge; the mark is
+     scaled up to fill the canvas rather than sitting inside the padding the
+     large icon can afford; and the star is knocked out in white and grown, since
+     the deep blue star of the full mark is a grey smudge on mid blue by the time
+     it is four pixels across.
+
+     Same geometry, same palette, same shapes in the same order as icon.svg.
+     16px goes further still: see icon-tiny.svg. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="mid" x1="0" y1="0" x2="1" y2="0.35">
+      <stop offset="0" stop-color="#a3e8ef"/>
+      <stop offset="1" stop-color="#74cbe1"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#2790c2"/>
+      <stop offset="1" stop-color="#4dc0d4"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="21" y="111" width="396" height="359" rx="33" fill="url(#mid)"/>
+
+  <path fill="url(#front)" d="
+    M 124 34
+    H 278
+    q 26 0 39 22
+    q 11 21 32 21
+    H 458
+    a 33 33 0 0 1 33 33
+    V 376
+    a 33 33 0 0 1 -33 33
+    H 124
+    a 33 33 0 0 1 -33 -33
+    V 67
+    a 33 33 0 0 1 33 -33
+    Z"/>
+
+  <path fill="#ffffff" fill-opacity="0.95" d="M 410.0 128.0 L 428.2 164.9 L 469.0 170.8 L 439.5 199.6 L 446.4 240.2 L 410.0 221.0 L 373.6 240.2 L 380.5 199.6 L 351.0 170.8 L 391.8 164.9 Z"/>
+</svg>
