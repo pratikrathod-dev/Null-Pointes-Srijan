@@ -1,0 +1,213 @@
+{
+  "isTabspace": true,
+  "version": 2,
+  "exportedAt": "2026-09-05T09:00:00.000Z",
+  "note": "Showcase board for Tabspace. Import it from Settings → Import (choose this file). Three spaces, every folder sorted by topic, with groups, tags, notes and a sticky note so each part of the board has something to show.",
+  "spaces": [
+    {
+      "title": "Srijan Hackathon",
+      "position": 1000,
+      "folders": [
+        {
+          "title": "Tabspace build",
+          "color": "#D3E3FD",
+          "collapsed": false,
+          "position": 1000,
+          "tags": ["hackathon"],
+          "items": [
+            { "type": "note", "title": "Extension is loaded unpacked from the repo folder. Reload with ↻ at chrome://extensions, then Ctrl+Shift+R on a new tab.", "position": 1000 },
+            {
+              "type": "group", "title": "Repo & docs", "collapsed": false, "position": 2000,
+              "groupItems": [
+                { "type": "bookmark", "title": "Null-Pointes-Srijan · GitHub", "url": "https://github.com/", "tags": ["code"], "position": 1000 },
+                { "type": "bookmark", "title": "Chrome Extensions — Manifest V3 overview", "url": "https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3", "tags": ["docs"], "position": 2000 },
+                { "type": "bookmark", "title": "chrome.tabs API reference", "url": "https://developer.chrome.com/docs/extensions/reference/api/tabs", "tags": ["docs"], "position": 3000 },
+                { "type": "bookmark", "title": "chrome.storage API reference", "url": "https://developer.chrome.com/docs/extensions/reference/api/storage", "tags": ["docs"], "position": 4000 }
+              ]
+            },
+            {
+              "type": "group", "title": "MiMo (Xiaomi) API", "collapsed": false, "position": 3000,
+              "groupItems": [
+                { "type": "bookmark", "title": "Xiaomi MiMo API Open Platform", "url": "https://platform.xiaomimimo.com/", "tags": ["ai"], "position": 1000 },
+                { "type": "bookmark", "title": "MiMo — First API call (docs)", "url": "https://mimo.mi.com/docs/en-US/quick-start/summary/first-api-call", "tags": ["ai", "docs"], "position": 2000 },
+                { "type": "bookmark", "title": "MiMo-V2.5-Pro announcement", "url": "https://mimo.xiaomi.com/mimo-v2-5-pro", "tags": ["ai"], "position": 3000 }
+              ]
+            },
+            { "type": "bookmark", "title": "Supabase dashboard", "url": "https://supabase.com/dashboard", "tags": ["code", "sync"], "position": 4000 }
+          ]
+        },
+        {
+          "title": "Pitch & demo",
+          "color": "#FDE293",
+          "collapsed": false,
+          "position": 2000,
+          "tags": ["hackathon"],
+          "items": [
+            { "type": "note", "title": "Demo order: 1) plain new tab → Tabspace  2) drag tabs into folders  3) AI news pill  4) Routines → File and close  5) Undo  6) Plan my day", "position": 1000 },
+            { "type": "bookmark", "title": "Pitch deck — Google Slides", "url": "https://docs.google.com/presentation/", "tags": ["pitch"], "position": 2000 },
+            { "type": "bookmark", "title": "Srijan — event page", "url": "https://unstop.com/", "tags": ["pitch"], "position": 3000 },
+            { "type": "bookmark", "title": "Judging rubric (shared doc)", "url": "https://docs.google.com/document/", "tags": ["pitch"], "position": 4000 },
+            { "type": "bookmark", "title": "Chrome Web Store — publish an extension", "url": "https://developer.chrome.com/docs/webstore/publish", "tags": ["later"], "position": 5000 }
+          ]
+        },
+        {
+          "title": "AI news sources",
+          "color": "#E9DDFF",
+          "collapsed": false,
+          "position": 3000,
+          "tags": ["ai"],
+          "items": [
+            { "type": "note", "title": "These 14 feeds are what the AI news panel reads. Every story card links to the publisher's own page.", "position": 1000 },
+            { "type": "bookmark", "title": "OpenAI — News", "url": "https://openai.com/news/", "tags": ["ai", "news"], "position": 2000 },
+            { "type": "bookmark", "title": "Google DeepMind — Blog", "url": "https://deepmind.google/blog/", "tags": ["ai", "news"], "position": 3000 },
+            { "type": "bookmark", "title": "Hugging Face — Blog", "url": "https://huggingface.co/blog", "tags": ["ai", "news"], "position": 4000 },
+            { "type": "bookmark", "title": "TechCrunch — AI", "url": "https://techcrunch.com/category/artificial-intelligence/", "tags": ["news"], "position": 5000 },
+            { "type": "bookmark", "title": "The Verge — AI", "url": "https://www.theverge.com/ai-artificial-intelligence", "tags": ["news"], "position": 6000 },
+            { "type": "bookmark", "title": "Ars Technica — AI", "url": "https://arstechnica.com/ai/", "tags": ["news"], "position": 7000 },
+            { "type": "bookmark", "title": "Hacker News", "url": "https://news.ycombinator.com/", "tags": ["news"], "position": 8000 },
+            { "type": "bookmark", "title": "Simon Willison's Weblog", "url": "https://simonwillison.net/", "tags": ["ai", "news"], "position": 9000 },
+            { "type": "bookmark", "title": "MIT Technology Review — AI", "url": "https://www.technologyreview.com/topic/artificial-intelligence/", "tags": ["news"], "position": 10000 },
+            { "type": "bookmark", "title": "The Decoder", "url": "https://the-decoder.com/", "tags": ["news"], "position": 11000 }
+          ]
+        }
+      ],
+      "widgets": [
+        { "text": "Today: ship the demo\n• Reload extension, run the 4-minute script twice\n• Check MiMo key works (Settings → Save & test)\n• Charge the laptop", "color": "#FFF7B2", "fontSize": 18, "x": 40, "y": 620 }
+      ]
+    },
+    {
+      "title": "College",
+      "position": 2000,
+      "folders": [
+        {
+          "title": "Hostel & fees",
+          "color": "#FEDAD1",
+          "collapsed": false,
+          "position": 1000,
+          "tags": ["admin"],
+          "items": [
+            { "type": "note", "title": "Hostel form is at step 2 of 4 — needs the fee receipt PDF and a passport photo. Last date 14 Sept.", "position": 1000 },
+            { "type": "bookmark", "title": "Hostel application portal", "url": "https://forms.gle/", "tags": ["admin", "deadline"], "position": 2000 },
+            { "type": "bookmark", "title": "Fee payment — SBI Collect", "url": "https://www.onlinesbi.sbi/sbicollect/", "tags": ["admin", "money"], "position": 3000 },
+            { "type": "bookmark", "title": "Fee receipt — Google Drive", "url": "https://drive.google.com/", "tags": ["admin"], "position": 4000 },
+            { "type": "bookmark", "title": "DigiLocker", "url": "https://www.digilocker.gov.in/", "tags": ["admin"], "position": 5000 }
+          ]
+        },
+        {
+          "title": "Exams — Operating Systems",
+          "color": "#C4EED0",
+          "collapsed": false,
+          "position": 2000,
+          "tags": ["study"],
+          "items": [
+            {
+              "type": "group", "title": "Lectures", "collapsed": false, "position": 1000,
+              "groupItems": [
+                { "type": "bookmark", "title": "NPTEL — Operating Systems (IIT)", "url": "https://nptel.ac.in/courses/106106144", "tags": ["study"], "position": 1000 },
+                { "type": "bookmark", "title": "OSTEP — Operating Systems: Three Easy Pieces", "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/", "tags": ["study", "book"], "position": 2000 },
+                { "type": "bookmark", "title": "MIT 6.S081 — Operating System Engineering", "url": "https://pdos.csail.mit.edu/6.828/", "tags": ["study"], "position": 3000 }
+              ]
+            },
+            {
+              "type": "group", "title": "Practice", "collapsed": false, "position": 2000,
+              "groupItems": [
+                { "type": "bookmark", "title": "GeeksforGeeks — OS interview questions", "url": "https://www.geeksforgeeks.org/operating-systems-interview-questions/", "tags": ["study"], "position": 1000 },
+                { "type": "bookmark", "title": "Previous year papers — Google Drive", "url": "https://drive.google.com/", "tags": ["study"], "position": 2000 }
+              ]
+            },
+            { "type": "bookmark", "title": "OS notes — Google Docs", "url": "https://docs.google.com/document/", "tags": ["study", "notes"], "position": 3000 }
+          ]
+        },
+        {
+          "title": "Placements",
+          "color": "#C2E7FF",
+          "collapsed": false,
+          "position": 3000,
+          "tags": ["career"],
+          "items": [
+            { "type": "bookmark", "title": "Internshala — Internships", "url": "https://internshala.com/internships/", "tags": ["career"], "position": 1000 },
+            { "type": "bookmark", "title": "LinkedIn — Jobs", "url": "https://www.linkedin.com/jobs/", "tags": ["career"], "position": 2000 },
+            { "type": "bookmark", "title": "LeetCode — Problems", "url": "https://leetcode.com/problemset/", "tags": ["career", "practice"], "position": 3000 },
+            { "type": "bookmark", "title": "Resume — Overleaf", "url": "https://www.overleaf.com/", "tags": ["career"], "position": 4000 },
+            { "type": "bookmark", "title": "Placement cell — notices", "url": "https://docs.google.com/spreadsheets/", "tags": ["career", "deadline"], "position": 5000 }
+          ]
+        },
+        {
+          "title": "Timetable & mail",
+          "color": "#DDE3EA",
+          "collapsed": true,
+          "position": 4000,
+          "tags": [],
+          "items": [
+            { "type": "bookmark", "title": "Gmail", "url": "https://mail.google.com/mail/u/0/#inbox", "tags": ["daily"], "position": 1000 },
+            { "type": "bookmark", "title": "Google Calendar", "url": "https://calendar.google.com/calendar/u/0/r", "tags": ["daily"], "position": 2000 },
+            { "type": "bookmark", "title": "Google Classroom", "url": "https://classroom.google.com/", "tags": ["daily"], "position": 3000 },
+            { "type": "bookmark", "title": "WhatsApp Web", "url": "https://web.whatsapp.com/", "tags": ["daily"], "position": 4000 }
+          ]
+        }
+      ],
+      "widgets": [
+        { "text": "Deadlines\n• Hostel form — 14 Sept\n• Placement registration — 20 Sept\n• OS internal — 25 Sept", "color": "#FFC4C4", "fontSize": 18, "x": 40, "y": 700 }
+      ]
+    },
+    {
+      "title": "Personal",
+      "position": 3000,
+      "folders": [
+        {
+          "title": "Diwali trip home",
+          "color": "#FFDCC2",
+          "collapsed": false,
+          "position": 1000,
+          "tags": ["travel"],
+          "items": [
+            { "type": "note", "title": "Tatkal opens 10 am the day before. Keep IRCTC logged in, payment via UPI.", "position": 1000 },
+            { "type": "bookmark", "title": "IRCTC — Book ticket", "url": "https://www.irctc.co.in/nget/train-search", "tags": ["travel"], "position": 2000 },
+            { "type": "bookmark", "title": "ConfirmTkt — PNR & alternatives", "url": "https://www.confirmtkt.com/", "tags": ["travel"], "position": 3000 },
+            { "type": "bookmark", "title": "redBus", "url": "https://www.redbus.in/", "tags": ["travel"], "position": 4000 },
+            { "type": "bookmark", "title": "Google Maps — home", "url": "https://www.google.com/maps", "tags": ["travel"], "position": 5000 }
+          ]
+        },
+        {
+          "title": "Read later",
+          "color": "#D9D3F5",
+          "collapsed": false,
+          "position": 2000,
+          "tags": ["reading"],
+          "items": [
+            { "type": "bookmark", "title": "Attention Is All You Need (arXiv)", "url": "https://arxiv.org/abs/1706.03762", "tags": ["ai", "paper"], "position": 1000 },
+            { "type": "bookmark", "title": "The Pragmatic Programmer — notes", "url": "https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/", "tags": ["book"], "position": 2000 },
+            { "type": "bookmark", "title": "How to build a Chrome extension in 2026 — Simon Willison", "url": "https://simonwillison.net/", "tags": ["code", "later"], "position": 3000 },
+            { "type": "bookmark", "title": "Paul Graham — How to Do Great Work", "url": "https://paulgraham.com/greatwork.html", "tags": ["essay"], "position": 4000 }
+          ]
+        },
+        {
+          "title": "Money",
+          "color": "#D7E3B4",
+          "collapsed": false,
+          "position": 3000,
+          "tags": ["money"],
+          "items": [
+            { "type": "bookmark", "title": "Google Pay", "url": "https://pay.google.com/", "tags": ["money"], "position": 1000 },
+            { "type": "bookmark", "title": "Budget sheet — Google Sheets", "url": "https://docs.google.com/spreadsheets/", "tags": ["money"], "position": 2000 },
+            { "type": "bookmark", "title": "Electricity bill — BESCOM", "url": "https://bescom.karnataka.gov.in/", "tags": ["money", "bill"], "position": 3000 },
+            { "type": "bookmark", "title": "Jio recharge", "url": "https://www.jio.com/selfcare/recharge/", "tags": ["money", "bill"], "position": 4000 }
+          ]
+        }
+      ],
+      "widgets": []
+    }
+  ],
+  "settings": {
+    "theme": "auto",
+    "openInNewTab": true,
+    "sidebarCollapsed": false,
+    "sidebarView": "tabs",
+    "newsRange": "daily",
+    "hidePinnedTabs": false,
+    "hideTagbar": false,
+    "fontFamily": "inter",
+    "onlineFavicons": true,
+    "syncEnabled": true
+  }
+}
