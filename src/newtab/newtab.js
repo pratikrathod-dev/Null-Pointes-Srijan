@@ -22,6 +22,10 @@ import {
   ROUTINE_MIN_DAYS, ROUTINE_EVENT_DAYS,
 } from '../lib/routines.js'
 import { mountRoutinePanel } from './routinepanel.js'
+import { autoTag } from '../lib/auto-tag.js'
+import { buildIndex, semanticSearch } from '../lib/memory/semantic-search.js'
+import { findRelated } from '../lib/memory/related-finder.js'
+import { computeImportance, computePermanentImportance } from '../lib/memory/importance-engine.js'
 import { ask, confirmAction, dialog, dismissLayer, menu, closeMenu, dropdown } from '../lib/dialogs.js'
 import {
   readAccounts, rankAccounts, recordAccountUse, forgetAccount, describeAccount, useCount,
@@ -51,6 +55,11 @@ let routinePanel = null
 let liveTabs = new Map()
 let liveSignature = ''
 
+// --- Memory system state ---------------------------------------------------
+
+let searchIndex = []
+let tempEntries = new Map()  // urlNorm → TempEntry from background service worker
+
 const $ = (id) => document.getElementById(id)
 
 // ================================================================== boot ===
@@ -61,6 +70,12 @@ const $ = (id) => document.getElementById(id)
   store.addEventListener('change', renderAll)
   store.addEventListener('sync', () => { renderAccount(); renderSyncPill() })
   store.addEventListener('remote-applied', () => toast('Board updated from another device'))
+
+  // Build the semantic search index from the loaded state.
+  searchIndex = buildIndex(store.state)
+
+  // Fetch temporary browsing memory from the background service worker.
+  fetchTempEntries()
 
   await refreshTabs()
   wireChrome()
@@ -130,6 +145,18 @@ function cycleTheme() {
 
 // ----------------------------------------------------------------- render ---
 
+/** Fetch temporary browsing entries from the background service worker. */
+function fetchTempEntries() {
+  try {
+    chrome.runtime.sendMessage({ type: 'memory:all' }, (entries) => {
+      if (chrome.runtime.lastError || !Array.isArray(entries)) return
+      tempEntries = new Map(entries.map((e) => [e.url?.replace(/\/+$/, '').toLowerCase(), e]))
+      renderRelated()
+      renderSaveSuggestions()
+    })
+  } catch { /* service worker may not be ready */ }
+}
+
 function renderAll() {
   applyChrome()
   renderSpaces()
@@ -142,6 +169,11 @@ function renderAll() {
   renderThemeButton()
   $('app').classList.toggle('sidebar-collapsed', store.state.settings.sidebarCollapsed)
   renderSidebarView()
+
+  // Rebuild search index after every state change.
+  searchIndex = buildIndex(store.state)
+  renderRelated()
+  renderSaveSuggestions()
 }
 
 // The sidebar holds two views -- the open-tab list and the AI news panel -- and
@@ -692,6 +724,152 @@ function renderTabs() {
   list.scrollTop = scroll
 }
 
+async function renderRelated() {
+  const panel = $('related-panel')
+  const list = $('related-list')
+  const tabLabel = $('related-tab')
+  list.replaceChildren()
+
+  // Determine the context tab: whichever tab the user is actually looking at.
+  let contextTitle = ''
+  let contextUrl = ''
+  try {
+    const [active] = await chrome.tabs.query({ active: true, currentWindow: true })
+    // Don't show related items for the board itself.
+    const boardUrl = chrome.runtime.getURL('src/newtab/')
+    if (active?.url && !active.url.startsWith(boardUrl)) {
+      contextTitle = active.title ?? ''
+      contextUrl = active.url ?? ''
+    }
+  } catch { /* no tabs API outside extension context */ }
+
+  if (!contextTitle && !contextUrl) {
+    panel.hidden = true
+    return
+  }
+
+  const results = findRelated({
+    title: contextTitle,
+    url: contextUrl,
+    state: store.state,
+    tempEntries,
+    limit: 3,
+  })
+
+  if (!results.length) {
+    panel.hidden = true
+    return
+  }
+
+  panel.hidden = false
+  tabLabel.textContent = contextTitle.length > 20
+    ? contextTitle.slice(0, 20) + '\u2026'
+    : contextTitle
+
+  for (const { item, folder, space, reasons } of results) {
+    const title = item.title || item.url || 'Untitled'
+    const sub = [hostnameOf(item.url ?? ''), folder?.title, space?.name]
+      .filter(Boolean)
+      .join(' \u00b7 ')
+
+    const row = el('a.related-item', {
+      href: item.url || '#',
+      title: `${title}\n${reasons.join(', ')}`,
+    }, [
+      faviconEl({ url: item.url ?? '', favicon: item.favicon, title }),
+      el('div.related-item__body', {}, [
+        el('div.related-item__title', { text: title }),
+        el('div.related-item__sub', { text: sub }),
+      ]),
+    ])
+
+    row.addEventListener('click', (e) => {
+      e.preventDefault()
+      if (item.url) chrome.tabs.create({ url: item.url })
+    })
+
+    list.append(row)
+  }
+}
+
+/** Show non-intrusive save suggestions for high-importance browsing entries. */
+function renderSaveSuggestions() {
+  const panel = $('save-suggest')
+  const list = $('save-suggest-list')
+  if (!panel || !list) return
+  list.replaceChildren()
+
+  if (!tempEntries?.size) {
+    panel.hidden = true
+    return
+  }
+
+  // Find HIGH-importance entries the user hasn't already saved.
+  const candidates = []
+  for (const [, entry] of tempEntries) {
+    if (entry.saved) continue
+    if (computeImportance(entry) !== 'high') continue
+    // Don't suggest if already on the board.
+    const norm = (entry.url ?? '').replace(/\/+$/, '').toLowerCase()
+    const onBoard = store.state.spaces?.some((s) =>
+      s.folders?.some((f) =>
+        f.items?.some((i) =>
+          (i.url ?? '').replace(/\/+$/, '').toLowerCase() === norm
+            || i.groupItems?.some((g) =>
+              (g.url ?? '').replace(/\/+$/, '').toLowerCase() === norm))))
+    if (onBoard) continue
+    candidates.push(entry)
+  }
+
+  if (!candidates.length) {
+    panel.hidden = true
+    return
+  }
+
+  // Show at most 3 suggestions.
+  const top = candidates.slice(0, 3)
+  panel.hidden = false
+
+  for (const entry of top) {
+    const title = entry.title || entry.url || 'Untitled'
+    const sub = hostnameOf(entry.url ?? '')
+
+    const saveBtn = el('button.btn.btn--quiet.btn--sm.save-suggest__save', { text: 'Save' })
+    saveBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      // Save to the first space's first folder (or the current space).
+      const space = currentSpace(store.state) || store.state.spaces?.[0]
+      if (!space) return
+      const folder = space.folders?.[0]
+      if (!folder) return
+      store.dispatch('addItem', {
+        folderId: folder.id,
+        item: {
+          type: 'bookmark',
+          url: entry.url,
+          title: entry.title || entry.url,
+          favicon: entry.favicon,
+        },
+      })
+      chrome.runtime.sendMessage({ type: 'memory:markSaved', url: entry.url })
+      entry.saved = true
+      renderSaveSuggestions()
+      toast(`Saved "${title.slice(0, 30)}"`)
+    })
+
+    const row = el('div.save-suggest__item', {}, [
+      faviconEl({ url: entry.url ?? '', favicon: entry.favicon, title }),
+      el('div.save-suggest__body', {}, [
+        el('div.save-suggest__name', { text: title.length > 28 ? title.slice(0, 28) + '\u2026' : title }),
+        el('div.save-suggest__sub', { text: sub }),
+      ]),
+      saveBtn,
+    ])
+
+    list.append(row)
+  }
+}
+
 function onTabClick(e, tab) {
   if (e.shiftKey && ui.lastClickedTabId != null) {
     const ids = openTabs.map((t) => t.id)
@@ -712,6 +890,7 @@ function onTabClick(e, tab) {
   ui.selectedTabIds.clear()
   ui.lastClickedTabId = tab.id
   chrome.tabs.update(tab.id, { active: true })
+  renderRelated()
 }
 
 function onTabDragStart(e, tab) {
@@ -889,7 +1068,75 @@ function renderBoard() {
   }
 
   layoutBoard(cards)
+
+  // Supplementary semantic results when searching by text.
+  const q = ui.search.trim()
+  if (q) {
+    const shownIds = new Set()
+    for (const { items } of entries) {
+      for (const item of items) {
+        shownIds.add(item.id)
+        if (isGroup(item)) for (const c of item.groupItems ?? []) shownIds.add(c.id)
+      }
+    }
+    const semantic = semanticSearch(searchIndex, q, { tempEntries, limit: 20 })
+      .filter((r) => !shownIds.has(r.item.id))
+    if (semantic.length) {
+      board.append(renderSemanticSection(semantic))
+    }
+  }
+
   $('board-scroll').scrollTop = scroll
+}
+
+/**
+ * Render a supplementary section of semantic search results.
+ *
+ * Shown below the keyword-matched folders when searching — items the keyword
+ * filter missed but the token-based engine considers relevant.
+ */
+function renderSemanticSection(results) {
+  const section = el('div.semantic-section')
+
+  const heading = el('div.semantic-section__head', {}, [
+    icon('search', { size: 15 }),
+    el('span', { text: `Related results (${results.length})` }),
+  ])
+  section.append(heading)
+
+  const list = el('div.semantic-section__list')
+  for (const { item, folder, space, matchedFields } of results) {
+    const title = item.title || item.url || 'Untitled'
+    const sub = [hostnameOf(item.url ?? ''), folder?.title, space?.name]
+      .filter(Boolean)
+      .join(' \u00b7 ')
+
+    const badge = matchedFields.length
+      ? el('span.semantic-section__badge', { text: matchedFields[0] })
+      : null
+
+    const row = el('a.semantic-section__item', {
+      href: item.url || '#',
+      title: `${title}\nMatched: ${matchedFields.join(', ')}`,
+    }, [
+      faviconEl({ url: item.url ?? '', favicon: item.favicon, title }),
+      el('div.semantic-section__body', {}, [
+        el('div.semantic-section__title', { text: title }),
+        el('div.semantic-section__sub', { text: sub }),
+      ]),
+      badge,
+    ])
+
+    row.addEventListener('click', (e) => {
+      e.preventDefault()
+      if (item.url) chrome.tabs.create({ url: item.url })
+    })
+
+    list.append(row)
+  }
+
+  section.append(list)
+  return section
 }
 
 /** Narrowest a folder is allowed to get before the board drops a column. */
@@ -1124,11 +1371,12 @@ function renderGroup(group, folder) {
 
     if (data.kind === 'tabs') {
       for (const tab of data.payload) {
-        store.dispatch('addItem', {
+        const itemId = store.dispatch('addItem', {
           folderId: folder.id,
           groupId: group.id,
           item: { title: tab.title, url: tab.url, favicon: tab.favicon ?? '' },
         })
+        if (itemId) autoTag({ store, itemId, title: tab.title, url: tab.url, folder: group.title })
       }
       ui.selectedTabIds.clear()
       toast(`Saved into "${group.title}"`, undoAction())
@@ -1180,6 +1428,11 @@ function renderItem(item, folder, group = null) {
     })
   }
 
+  const imp = computePermanentImportance(item)
+  const impBadge = imp === 'high'
+    ? el('span.item__importance', { title: 'High importance' })
+    : null
+
   const node = el(`a.item${liveIds.length ? '.is-open' : ''}`, {
     // Sanitised so a middle-click cannot follow a hostile scheme either.
     href: safeUrl(item.url) || '#',
@@ -1188,7 +1441,10 @@ function renderItem(item, folder, group = null) {
   }, [
     faviconEl(item, true),
     el('div.item__body', {}, [
-      el('div.item__title', { text: item.title }),
+      el('div.item__title', {}, [
+        el('span', { text: item.title }),
+        impBadge,
+      ]),
       item.tags?.length
         ? el('div.item__tags', {}, item.tags.map((t) => el('span.item__tag', {
           text: t,
@@ -1539,12 +1795,13 @@ function wireFolderDrop(node, folder) {
       const target = findFolder(store.state, folder.id)
       let position = nextPosition(target?.folder.items ?? [])
       for (const tab of data.payload) {
-        store.dispatch('addItem', {
+        const itemId = store.dispatch('addItem', {
           folderId: folder.id,
           item: { title: tab.title, url: tab.url, favicon: tab.favicon ?? '' },
           position,
         })
         position += 1000
+        if (itemId) autoTag({ store, itemId, title: tab.title, url: tab.url, folder: folder.title })
       }
       ui.selectedTabIds.clear()
       toast(`Saved ${data.payload.length} tab${data.payload.length === 1 ? '' : 's'}`, undoAction())
@@ -2716,6 +2973,10 @@ function wireUi() {
 
   $('btn-close-dupes').addEventListener('click', closeDuplicateTabs)
 
+  $('save-suggest-dismiss').addEventListener('click', () => {
+    $('save-suggest').hidden = true
+  })
+
   $('btn-stash').addEventListener('click', async () => {
     if (!openTabs.length) return toast('Nothing to stash — you are already tidy')
     const space = currentSpace(store.state)
@@ -2764,8 +3025,9 @@ function wireUi() {
     const folderId = store.dispatch('addFolder', { spaceId: space.id, title: 'New folder' })
     let position = 1000
     for (const tab of data.payload) {
-      store.dispatch('addItem', { folderId, item: tab, position }, { undoable: false })
+      const itemId = store.dispatch('addItem', { folderId, item: tab, position }, { undoable: false })
       position += 1000
+      if (itemId) autoTag({ store, itemId, title: tab.title, url: tab.url, folder: 'New folder' })
     }
     ui.selectedTabIds.clear()
     toast(`Saved ${data.payload.length} tab${data.payload.length === 1 ? '' : 's'} to a new folder`, undoAction())

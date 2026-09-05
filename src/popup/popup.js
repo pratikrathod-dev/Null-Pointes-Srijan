@@ -4,6 +4,7 @@ import { Store } from '../lib/store.js'
 import { bySortPosition, el, faviconEl, hostnameOf } from '../lib/util.js'
 import { icon } from '../lib/icons.js'
 import { ask, dismissLayer } from '../lib/dialogs.js'
+import { autoTag } from '../lib/auto-tag.js'
 
 const store = new Store()
 const $ = (id) => document.getElementById(id)
@@ -113,10 +114,11 @@ function normalise(url) {
 
 async function save(folder) {
   if (!tab) return
-  store.dispatch('addItem', {
+  const itemId = store.dispatch('addItem', {
     folderId: folder.id,
     item: { title: tab.title, url: tab.url, favicon: tab.favIconUrl },
   })
+  if (itemId) autoTag({ store, itemId, title: tab.title, url: tab.url, folder: folder.title })
   $('toasts').append(el('div.toast', { text: `Saved to "${folder.title}"` }))
   // Wait for the write to land before the popup is torn down.
   await store.flushNow()

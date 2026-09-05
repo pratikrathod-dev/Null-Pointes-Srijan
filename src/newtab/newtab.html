@@ -38,6 +38,21 @@
         <div class="routine-slot" id="routine-offer" hidden></div>
         <div class="hint">Drag a tab onto a folder to save it. Shift-click to grab several at once.</div>
         <div class="tab-list" id="tab-list"></div>
+        <div class="related-panel" id="related-panel" hidden>
+          <div class="related-panel__header">
+            <span class="related-panel__title">Related</span>
+            <span class="related-panel__tab" id="related-tab"></span>
+          </div>
+          <div class="related-list" id="related-list"></div>
+        </div>
+
+        <div class="save-suggest" id="save-suggest" hidden>
+          <div class="save-suggest__header">
+            <span class="save-suggest__title">Worth saving?</span>
+            <button class="icon-btn icon-btn--sm" id="save-suggest-dismiss" title="Dismiss"></button>
+          </div>
+          <div class="save-suggest__list" id="save-suggest-list"></div>
+        </div>
       </div>
 
       <div class="sidebar__view" id="panel-news" role="tabpanel" hidden>

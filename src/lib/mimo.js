@@ -27,7 +27,7 @@ export function baseUrlFor(apiKey) {
 }
 
 /**
- * @returns {Promise<{apiKey: string, webSearch: boolean, ownKey: boolean}>}
+ * @returns {Promise<{apiKey: string, webSearch: boolean, ownKey: boolean, autoTag: boolean}>}
  * `apiKey` is always usable: the person's own key when they pasted one,
  * otherwise the built-in one. `ownKey` says which.
  */
@@ -39,6 +39,7 @@ export async function readMimoConfig() {
     apiKey: own || BUILT_IN_MIMO_KEY,
     ownKey: Boolean(own),
     webSearch: saved.webSearch === true,
+    autoTag: saved.autoTag !== false,
   }
 }
 

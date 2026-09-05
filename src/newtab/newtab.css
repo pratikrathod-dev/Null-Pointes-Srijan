@@ -601,6 +601,128 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 .row:hover .row__action { opacity: 1; }
 .row__saved { color: var(--success); }
 
+/* --- Related items panel (sidebar) ---------------------------------------- */
+
+.related-panel { border-top: 1px solid var(--border); padding: 8px 0; }
+.related-panel[hidden] { display: none; }
+.related-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px 6px;
+}
+.related-panel__title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); }
+.related-panel__tab { font-size: 11px; color: var(--text-3); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.related-list { padding: 0 8px 4px; }
+.related-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+  text-decoration: none;
+  color: inherit;
+}
+.related-item:hover { background: var(--surface-2); }
+.related-item__body { min-width: 0; flex: 1; }
+.related-item__title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.related-item__sub { font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Save suggestions panel (sidebar) ------------------------------------- */
+
+.save-suggest { border-top: 1px solid var(--border); padding: 8px 0; }
+.save-suggest[hidden] { display: none; }
+.save-suggest__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px 6px;
+}
+.save-suggest__title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); }
+.save-suggest__list { padding: 0 8px 4px; }
+.save-suggest__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--r-full);
+  transition: background var(--fast) var(--ease);
+}
+.save-suggest__item:hover { background: var(--surface-2); }
+.save-suggest__body { min-width: 0; flex: 1; }
+.save-suggest__name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.save-suggest__sub { font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.save-suggest__save { flex: 0 0 auto; }
+
+/* --- semantic search supplementary section --- */
+
+.semantic-section {
+  column-span: all;
+  margin: 12px 0 4px;
+  padding: 0 4px;
+}
+.semantic-section__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.semantic-section__head svg { opacity: .5; }
+.semantic-section__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.semantic-section__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--r-full);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  text-decoration: none;
+  color: inherit;
+  max-width: 280px;
+  min-width: 0;
+}
+.semantic-section__item:hover {
+  background: var(--surface-2);
+  border-color: var(--primary);
+}
+.semantic-section__body { min-width: 0; flex: 1; }
+.semantic-section__title {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.semantic-section__sub {
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.semantic-section__badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--r-full);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  text-transform: capitalize;
+}
+
 /*
  * Favicons sit on a plate whose colour is picked from the icon itself, measured
  * at load time: a dark glyph gets a white plate, a white or very pale one gets
@@ -1400,7 +1522,13 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 
 .item.is-selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
 .item__body { min-width: 0; flex: 1; }
-.item__title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item__title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
+.item__importance {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--danger); flex-shrink: 0;
+  animation: importance-pulse 2s ease-in-out infinite;
+}
+@keyframes importance-pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 .item__tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
 .item__tag {
   padding: 1px 7px;
