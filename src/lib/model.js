@@ -72,6 +72,8 @@ export function defaultSettings() {
     currentSpaceId: null,
     openInNewTab: false,
     sidebarCollapsed: false,
+    sidebarView: 'tabs',
+    newsRange: 'daily',
     hidePinnedTabs: false,
     hideTagbar: false,
     fontFamily: 'inter',

@@ -13,6 +13,8 @@ import {
   positionBetween, formatBytes, debounce, safeUrl,
 } from '../lib/util.js'
 import { icon } from '../lib/icons.js'
+import { mountNewsPanel, mimoSettingRows } from './newspanel.js'
+import { readMimoConfig } from '../lib/mimo.js'
 import { ask, confirmAction, dialog, dismissLayer, menu, closeMenu, dropdown } from '../lib/dialogs.js'
 import {
   readAccounts, rankAccounts, recordAccountUse, forgetAccount, describeAccount, useCount,
@@ -29,6 +31,10 @@ const ui = {
 }
 
 let openTabs = []
+
+// The AI news view of the sidebar; mounted once the DOM is wired.
+let newsPanel = null
+let newsShowing = false
 
 // Every URL open in any window, mapped to the tab ids showing it, so the board
 // can mark a bookmark as live. Kept separate from `openTabs`: that list is the
@@ -51,6 +57,13 @@ const $ = (id) => document.getElementById(id)
   await refreshTabs()
   wireChrome()
   wireUi()
+  newsPanel = mountNewsPanel({
+    store,
+    toast,
+    $,
+    openSettings: () => { dismissLayer(); settingsDialog() },
+    isVisible: () => newsShowing,
+  })
   renderAll()
 })()
 
@@ -96,6 +109,29 @@ function renderAll() {
   renderSyncPill()
   renderThemeButton()
   $('app').classList.toggle('sidebar-collapsed', store.state.settings.sidebarCollapsed)
+  renderSidebarView()
+}
+
+// The sidebar holds two views -- the open-tab list and the AI news panel -- and
+// which one shows is a setting, like whether the sidebar is open at all.
+function renderSidebarView() {
+  const s = store.state.settings
+  const view = s.sidebarView === 'news' ? 'news' : 'tabs'
+  for (const [id, name] of [['view-tabs', 'tabs'], ['view-news', 'news']]) {
+    const on = view === name
+    $(id).classList.toggle('is-active', on)
+    $(id).setAttribute('aria-selected', on ? 'true' : 'false')
+  }
+  $('panel-tabs').hidden = view !== 'tabs'
+  $('panel-news').hidden = view !== 'news'
+
+  const showing = view === 'news' && !s.sidebarCollapsed
+  if (showing && !newsShowing) newsPanel?.shown()
+  newsShowing = showing
+}
+
+function setSidebarView(view) {
+  store.dispatch('updateSettings', { patch: { sidebarView: view } }, { undoable: false })
 }
 
 function renderThemeButton() {
@@ -1494,9 +1530,10 @@ function toggleControl(checked, onChange) {
   return el('label.switch', {}, [input, el('span.switch__track')])
 }
 
-function settingsDialog() {
+async function settingsDialog() {
   const s = store.state.settings
   const sync = store.sync.describe()
+  const mimo = await readMimoConfig()
 
   const quietBtn = (label, onClick) => {
     const b = el('button.btn.btn--quiet.btn--sm', { text: label })
@@ -1506,6 +1543,19 @@ function settingsDialog() {
 
   const body = el('div', {}, [
     accountSetting(),
+
+    ...mimoSettingRows({
+      config: mimo,
+      settingRow,
+      toggleControl,
+      toast,
+      onKeySaved: () => newsPanel?.refresh({ force: true }),
+      onRefresh: () => {
+        dismissLayer()
+        store.dispatch('updateSettings', { patch: { sidebarCollapsed: false, sidebarView: 'news' } }, { undoable: false })
+        newsPanel?.refresh({ force: true })
+      },
+    }),
 
     settingRow('Font', 'Inter and Manrope ship with the extension, so they look the same everywhere.',
       dropdown({
@@ -2207,6 +2257,7 @@ function wireUi() {
   // beside the rest of the interface.
   $('brand-mark').append(el('img', { src: chrome.runtime.getURL('icons/icon.svg'), alt: '' }))
   $('btn-sidebar').append(icon('sidebar', { size: 18 }))
+  $('btn-news').append(icon('news', { size: 18 }))
   $('btn-tags').append(icon('tag', { size: 18 }))
   $('btn-settings').append(icon('settings', { size: 18 }))
   $('search').before(icon('search', { size: 18 }))
@@ -2225,6 +2276,22 @@ function wireUi() {
     store.dispatch('updateSettings', {
       patch: { sidebarCollapsed: !store.state.settings.sidebarCollapsed },
     }, { undoable: false })
+  })
+
+  $('view-tabs').addEventListener('click', () => setSidebarView('tabs'))
+  $('view-news').addEventListener('click', () => setSidebarView('news'))
+
+  // The top-bar news button: opens the sidebar on the news view, and if that
+  // is already what is showing, tucks the sidebar away again.
+  $('btn-news').addEventListener('click', () => {
+    const s = store.state.settings
+    if (s.sidebarCollapsed) {
+      store.dispatch('updateSettings', { patch: { sidebarCollapsed: false, sidebarView: 'news' } }, { undoable: false })
+    } else if (s.sidebarView === 'news') {
+      store.dispatch('updateSettings', { patch: { sidebarCollapsed: true } }, { undoable: false })
+    } else {
+      setSidebarView('news')
+    }
   })
 
   $('btn-add-folder').addEventListener('click', addFolder)

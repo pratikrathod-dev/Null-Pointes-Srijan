@@ -47,6 +47,37 @@ extension pages fairly aggressively.
 
 ---
 
+## AI news (MiMo)
+
+The sidebar has a second view, **AI news**: the ten hottest stories in AI and
+tech for today or this week, ranked by Xiaomi's `mimo-v2.5-pro`. Switch with the
+pills under the logo, or the newspaper button in the top bar.
+
+How it works, and why every story can be trusted:
+
+1. The extension fetches fourteen real feeds itself — OpenAI, Google AI, Google
+   DeepMind, Hugging Face, TechCrunch, The Verge, Ars Technica, Hacker News,
+   Simon Willison, The Hacker News, MIT Technology Review, MarkTechPost, The
+   Decoder and MIT News.
+2. MiMo picks the ten that matter most, merges duplicates, writes a one-line
+   summary, tags a category (release, free, open source, product, research,
+   funding, security, policy) and gives each a heat score.
+3. Anything MiMo returns that cannot be traced back to a fetched story is
+   dropped. The link on every card is the publisher's own page.
+
+Set it up in **Settings → MiMo API key** (`sk-…` from platform.xiaomimimo.com,
+or a `tp-…` Token Plan key), then **Save & test**. The key is stored only in
+this browser's local extension storage — never synced, never exported. Results
+are cached for four hours (today) or a day (this week); the refresh button
+forces a new run. Without a key, "Show newest without AI" lists the feeds'
+newest stories unranked.
+
+**MiMo web search** (Settings) lets the model add a story the feeds missed;
+only links the API actually cited are kept. Direct `sk-` keys only, with the
+Web Search plugin enabled in the MiMo console.
+
+---
+
 ## Keyboard
 
 | Key | Does |
@@ -78,6 +109,8 @@ src/
     store.js           local persistence, undo/redo, cross-tab updates
     sync.js            chunked chrome.storage.sync engine
     supabase-sync.js   email + code sign-in, the recommended backend
+    mimo.js            Xiaomi MiMo client; the key lives in local storage only
+    news.js            feed fetching, MiMo ranking, and the news cache
     supabase-config.js the two values you paste in
   newtab/              the board (newtab override)
   sidepanel/           vertical tab strip + saved folders, in Chrome's side panel

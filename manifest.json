@@ -3,7 +3,7 @@
   "name": "Tabspace",
   "short_name": "Tabspace",
   "description": "Tab hoarder? Same. Drag them into folders, tag them, and actually find things again. Synced everywhere you sign in.",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "minimum_chrome_version": "114",
   "icons": {
     "16": "icons/icon_16.png",
@@ -60,6 +60,22 @@
     "unlimitedStorage"
   ],
   "host_permissions": [
-    "https://zblhbrhkcftkqjhqesjp.supabase.co/*"
+    "https://zblhbrhkcftkqjhqesjp.supabase.co/*",
+    "https://api.xiaomimimo.com/*",
+    "https://token-plan-cn.xiaomimimo.com/*",
+    "https://openai.com/*",
+    "https://blog.google/*",
+    "https://deepmind.google/*",
+    "https://huggingface.co/*",
+    "https://techcrunch.com/*",
+    "https://www.theverge.com/*",
+    "https://arstechnica.com/*",
+    "https://hnrss.org/*",
+    "https://simonwillison.net/*",
+    "https://feeds.feedburner.com/*",
+    "https://www.technologyreview.com/*",
+    "https://www.marktechpost.com/*",
+    "https://the-decoder.com/*",
+    "https://news.mit.edu/*"
   ]
 }

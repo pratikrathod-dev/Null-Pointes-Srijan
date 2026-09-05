@@ -13,25 +13,46 @@
         <span class="brand__name">Tabspace</span>
       </div>
 
-      <div class="section-head">
-        <span>Open tabs</span>
-        <span class="section-head__count" id="tab-count">0</span>
-        <span class="spacer"></span>
+      <div class="sidebar__switch" role="tablist" aria-label="Sidebar view">
+        <button class="switch-tab is-active" id="view-tabs" role="tab" aria-selected="true">
+          <span>Open tabs</span>
+          <span class="switch-tab__count" id="tab-count">0</span>
+        </button>
+        <button class="switch-tab" id="view-news" role="tab" aria-selected="false">
+          <span>AI news</span>
+          <span class="switch-tab__dot" id="news-dot" hidden></span>
+        </button>
       </div>
 
-      <div class="sidebar__tools">
-        <button class="btn btn--quiet btn--sm" id="btn-stash">Stash all</button>
-        <button class="btn btn--quiet btn--sm" id="btn-sort-tabs">Sort</button>
-        <button class="btn btn--quiet btn--sm" id="btn-close-dupes">Dedupe</button>
+      <div class="sidebar__view" id="panel-tabs" role="tabpanel">
+        <div class="sidebar__tools">
+          <button class="btn btn--quiet btn--sm" id="btn-stash">Stash all</button>
+          <button class="btn btn--quiet btn--sm" id="btn-sort-tabs">Sort</button>
+          <button class="btn btn--quiet btn--sm" id="btn-close-dupes">Dedupe</button>
+        </div>
+
+        <div class="hint">Drag a tab onto a folder to save it. Shift-click to grab several at once.</div>
+        <div class="tab-list" id="tab-list"></div>
       </div>
 
-      <div class="hint">Drag a tab onto a folder to save it. Shift-click to grab several at once.</div>
-      <div class="tab-list" id="tab-list"></div>
+      <div class="sidebar__view" id="panel-news" role="tabpanel" hidden>
+        <div class="news__bar">
+          <div class="seg" id="news-range" role="radiogroup" aria-label="Period">
+            <button class="seg__btn is-active" data-range="daily" role="radio" aria-checked="true">Today</button>
+            <button class="seg__btn" data-range="weekly" role="radio" aria-checked="false">This week</button>
+          </div>
+          <span class="spacer"></span>
+          <button class="icon-btn icon-btn--sm" id="btn-news-refresh" title="Refresh the news"></button>
+        </div>
+        <div class="news__status" id="news-updated"></div>
+        <div class="news-list" id="news-list"></div>
+      </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-btn" id="btn-sidebar" title="Show or hide the tab sidebar"></button>
+        <button class="icon-btn" id="btn-sidebar" title="Show or hide the sidebar"></button>
+        <button class="icon-btn" id="btn-news" title="Hot AI and tech news"></button>
         <div class="topbar__divider"></div>
         <div class="spaces" id="spaces"></div>
         <div class="search">

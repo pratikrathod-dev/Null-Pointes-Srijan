@@ -626,6 +626,287 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 .favicon--sm { width: 20px; height: 20px; flex-basis: 20px; border-radius: var(--r-xs); }
 .favicon--sm img { width: 16px; height: 16px; }
 
+/* ------------------------------------------------ sidebar view switch */
+
+/* Two views share the sidebar: the open-tab list and the AI news panel. The
+   switch is a pair of pills under the brand; the collapse button in the top
+   bar still hides the whole sidebar whichever view is showing. */
+.sidebar__switch {
+  display: flex;
+  gap: 6px;
+  margin: 2px 12px 8px;
+  padding: 4px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+}
+.switch-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.switch-tab:hover { color: var(--text); }
+.switch-tab.is-active {
+  background: var(--surface-lowest);
+  color: var(--text);
+  box-shadow: var(--elev-1);
+}
+.switch-tab__count {
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: var(--surface-high);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.switch-tab.is-active .switch-tab__count { background: var(--accent-soft); color: var(--accent); }
+:root[data-theme='dark'] .switch-tab.is-active .switch-tab__count { color: var(--on-primary-container); }
+.switch-tab__dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #f28b3b;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f28b3b 35%, transparent);
+}
+
+.sidebar__view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sidebar__view[hidden] { display: none; }
+
+/* ------------------------------------------------------------- AI news */
+
+.news__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px 6px;
+}
+.news__bar .spacer { flex: 1; }
+/* The status line ("Reading feeds…", "Updated 3h ago") gets its own row so it
+   can never squeeze the period pills; it clips with an ellipsis rather than
+   pushing the sidebar wider. */
+.news__status {
+  padding: 0 14px 8px;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 14px;
+}
+
+.seg {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+}
+.seg__btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.seg__btn:hover { color: var(--text); }
+.seg__btn.is-active { background: var(--secondary-container); color: var(--on-secondary-container); }
+
+.news-list { flex: 1; overflow-y: auto; padding: 0 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Every category has its own pastel; the tint washes the whole card (body and
+   border), not just a label, so a list of ten reads as ten coloured objects
+   in both themes rather than white boxes wearing coloured hats. */
+:root {
+  --news-release: #a8c7fa;
+  --news-free: #8fdca4;
+  --news-open: #bbd08a;
+  --news-product: #d9d3f5;
+  --news-research: #cbb6ff;
+  --news-funding: #fbc02d;
+  --news-security: #f8afa0;
+  --news-policy: #a6c8c2;
+}
+
+.news-card {
+  --tint: var(--news-product);
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 10px 11px 10px 10px;
+  border-radius: var(--r);
+  border: 1px solid color-mix(in srgb, var(--tint) 45%, var(--border));
+  background: color-mix(in srgb, var(--tint) 16%, var(--surface-lowest));
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.news-card:hover {
+  background: color-mix(in srgb, var(--tint) 24%, var(--surface-lowest));
+  box-shadow: var(--elev-1);
+  transform: translateY(-1px);
+}
+.news-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:root[data-theme='dark'] .news-card {
+  border-color: color-mix(in srgb, var(--tint) 38%, var(--border));
+  background: color-mix(in srgb, var(--tint) 14%, var(--surface-container));
+}
+:root[data-theme='dark'] .news-card:hover { background: color-mix(in srgb, var(--tint) 20%, var(--surface-container)); }
+
+.news-card--release     { --tint: var(--news-release); }
+.news-card--free        { --tint: var(--news-free); }
+.news-card--open-source { --tint: var(--news-open); }
+.news-card--product     { --tint: var(--news-product); }
+.news-card--research    { --tint: var(--news-research); }
+.news-card--funding     { --tint: var(--news-funding); }
+.news-card--security    { --tint: var(--news-security); }
+.news-card--policy      { --tint: var(--news-policy); }
+
+.news-card__rank {
+  flex: 0 0 24px;
+  height: 24px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--tint) 60%, var(--surface-lowest));
+  color: #0e1116;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-theme='dark'] .news-card__rank { background: color-mix(in srgb, var(--tint) 70%, #0d1117); color: #f5f7fb; }
+
+.news-card__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.news-card__head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-right: 26px; }
+.news-card__tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--tint) 55%, var(--surface-lowest));
+  color: #0e1116;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+:root[data-theme='dark'] .news-card__tag { background: color-mix(in srgb, var(--tint) 42%, var(--surface-container)); color: #eef2f8; }
+.news-card__tag--free { background: var(--news-free); color: #05320f; }
+:root[data-theme='dark'] .news-card__tag--free { background: color-mix(in srgb, var(--news-free) 55%, var(--surface-container)); color: #e9fff0; }
+.news-card__heat {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.news-card__heat .icon { color: #d9480f; }
+.news-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card__summary {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-card__meta {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.news-card__meta .favicon--sm { width: 16px; height: 16px; flex-basis: 16px; border-radius: 4px; }
+.news-card__meta .favicon--sm img { width: 12px; height: 12px; }
+.news-card__meta .dot { opacity: .6; }
+.news-card__save {
+  position: absolute;
+  top: 8px; right: 8px;
+  opacity: 0;
+  background: color-mix(in srgb, var(--surface-lowest) 85%, transparent);
+  transition: opacity var(--fast) var(--ease);
+}
+.news-card:hover .news-card__save,
+.news-card:focus-within .news-card__save { opacity: 1; }
+
+/* Empty, loading and error states share one calm box. */
+.news-state {
+  margin: 4px 2px;
+  padding: 16px 14px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.news-state__title { font-size: 13.5px; font-weight: 600; }
+.news-state__desc { font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+.news-state__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.news-state--error { background: var(--error-container); }
+.news-state--error .news-state__title { color: var(--on-error-container); }
+.news-state--error .news-state__desc { color: color-mix(in srgb, var(--on-error-container) 80%, transparent); }
+:root[data-theme='dark'] .news-state--error { background: color-mix(in srgb, var(--error) 22%, var(--surface-container)); }
+:root[data-theme='dark'] .news-state--error .news-state__title,
+:root[data-theme='dark'] .news-state--error .news-state__desc { color: #ffd9d4; }
+
+.news-skeleton { display: flex; flex-direction: column; gap: 8px; }
+.news-skeleton__card {
+  height: 92px;
+  border-radius: var(--r);
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface-high) 50%, var(--surface-2) 70%);
+  background-size: 220% 100%;
+  animation: news-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes news-shimmer { from { background-position: 120% 0 } to { background-position: -20% 0 } }
+@media (prefers-reduced-motion: reduce) { .news-skeleton__card { animation: none; } }
+
+.news__foot {
+  padding: 8px 4px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+#btn-news-refresh.is-busy .icon { animation: news-spin .9s linear infinite; }
+@keyframes news-spin { to { transform: rotate(360deg) } }
+
+.field--key { width: 250px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
 /* ------------------------------------------------------------------- main */
 
 .main { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
