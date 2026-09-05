@@ -1,7 +1,7 @@
-// The Routines view of the sidebar: what is being tracked right now, how far
-// the search has had to widen, the routines learned so far, a simulation for
-// seeing the flow without waiting, and the activity log. All of it in the
-// open, next to the tabs it is about, rather than behind Settings.
+// The Routines view of the sidebar: the two routines every board ships with,
+// what is being tracked right now, how far the search has had to widen, the
+// routines learned so far, and the activity log. All of it in the open, next
+// to the tabs it is about, rather than behind Settings.
 //
 // This module only draws. Every tap is handed back to the board through
 // `actions`, because the board owns the confirm dialog and the undo toast.
@@ -9,7 +9,7 @@
 import { el, faviconEl } from '../lib/util.js'
 import { icon } from '../lib/icons.js'
 import { timeAgo } from '../lib/news.js'
-import { hourLabel, ROUTINE_MIN_REPEATS, ROUTINE_MIN_DAYS, ROUTINE_EVENT_DAYS, hasSimulation } from '../lib/routines.js'
+import { hourLabel, ROUTINE_MIN_REPEATS, ROUTINE_MIN_DAYS, ROUTINE_EVENT_DAYS, BUILT_IN_ROUTINES } from '../lib/routines.js'
 
 const RECENT_EVENTS = 6
 const RECENT_LOG = 8
@@ -17,7 +17,7 @@ const RECENT_LOG = 8
 /**
  * @param {object} deps
  * @param {(id: string) => HTMLElement} deps.$
- * @param {object} deps.actions   accept, decline, run, skip, forget, simulate, clearSimulation, setTracking
+ * @param {object} deps.actions   accept, decline, run, skip, forget, runBuiltin, setTracking
  */
 export function mountRoutinePanel({ $, actions }) {
   /** @param {{store: object, report: Array, now: number}} snap */
@@ -26,10 +26,10 @@ export function mountRoutinePanel({ $, actions }) {
     if (!snap) { host.replaceChildren(); return }
     const { store, report, now } = snap
     host.replaceChildren(
+      builtinCard(store, now),
       trackingCard(store, now),
       searchCard(store, report),
       routinesCard(store, now),
-      simulationCard(store),
       activityCard(store),
     )
   }
@@ -54,7 +54,6 @@ export function mountRoutinePanel({ $, actions }) {
           el('span.rp-event__kind', { text: e.k === 'close' ? 'closed' : 'opened', class: `rp-event__kind rp-event__kind--${e.k}` }),
           faviconEl({ url: e.u || `https://${e.h}/`, favicon: '' }, true),
           el('span.rp-event__host', { text: e.h, title: e.ti || e.h }),
-          e.sim ? el('span.rp-badge', { text: 'sim' }) : null,
           el('span.rp-event__when', { text: timeAgo(new Date(e.t).toISOString(), now) }),
         ])))
         : el('div.rp-card__muted', { text: on ? 'Open a web page and it shows up here.' : 'Nothing is recorded while paused.' }),
@@ -90,15 +89,38 @@ export function mountRoutinePanel({ $, actions }) {
     ])
   }
 
+  // ------------------------------------------------------------ built-in
+
+  function builtinCard(store, now) {
+    const busy = store.busyBuiltin ?? null
+    return el('div.rp-card.rp-card--demo', {}, [
+      head('demo', 'Ready to run'),
+      el('div.rp-routines', {}, BUILT_IN_ROUTINES.map((b) => {
+        const last = store.builtin?.[b.id]?.lastRunAt
+        const run = btn(busy === b.id ? 'Working…' : b.action, 'primary', () => actions.runBuiltin(b))
+        run.disabled = Boolean(busy)
+        return el('div.rp-routine.rp-routine--ready', {}, [
+          el('div.rp-routine__top', {}, [
+            el('div.rp-routine__name', { text: b.name }),
+            el('span.rp-status.rp-status--ready', { text: last ? 'ran ' + timeAgo(new Date(last).toISOString(), now) : 'ready' }),
+          ]),
+          el('div.rp-routine__desc', { text: b.description }),
+          el('div.rp-actions', {}, [run]),
+        ])
+      })),
+      el('div.rp-card__muted', { text: 'Both ask before touching the board or your tabs, and both can be undone from the toast.' }),
+    ])
+  }
+
   // ------------------------------------------------------------ routines
 
   function routinesCard(store, now) {
     const list = [...store.routines].sort((a, b) => rank(a) - rank(b) || b.createdAt - a.createdAt)
     return el('div.rp-card', {}, [
-      head('routines', `Routines${list.length ? ` · ${list.length}` : ''}`),
+      head('routines', `Learned${list.length ? ` · ${list.length}` : ''}`),
       list.length
         ? el('div.rp-routines', {}, list.map((r) => routineRow(r, now)))
-        : el('div.rp-card__muted', { text: 'Nothing learned yet. The first offer appears here and at the top of Open tabs.' }),
+        : el('div.rp-card__muted', { text: 'Nothing learned yet. Open the same sites together three times and the offer appears here and at the top of Open tabs.' }),
     ])
   }
 
@@ -123,7 +145,6 @@ export function mountRoutinePanel({ $, actions }) {
     return el(`div.rp-routine.rp-routine--${r.status}`, {}, [
       el('div.rp-routine__top', {}, [
         el('div.rp-routine__name', { text: r.name }),
-        r.sim ? el('span.rp-badge', { text: 'simulated' }) : null,
         el(`span.rp-status.rp-status--${r.status}`, { text: r.status }),
       ]),
       r.description ? el('div.rp-routine__desc', { text: r.description }) : null,
@@ -132,21 +153,6 @@ export function mountRoutinePanel({ $, actions }) {
         faviconEl({ url: r.urls[i], favicon: '' }, true), el('span', { text: h }),
       ]))),
       el('div.rp-actions', {}, buttons),
-    ])
-  }
-
-  // ---------------------------------------------------------- simulation
-
-  function simulationCard(store) {
-    const seeded = hasSimulation(store)
-    const simulate = btn('Simulate a morning', 'primary', () => actions.simulate())
-    const clear = btn('Clear simulation', 'quiet', () => actions.clearSimulation())
-    return el('div.rp-card.rp-card--demo', {}, [
-      head('demo', 'Try it without waiting'),
-      el('div.rp-card__line', {
-        text: 'Seeds three pretend bursts of GitHub, Gmail, Notion and Calendar into the last hour and runs the same detector on them. Everything it produces is marked simulated; real tracking keeps going underneath.',
-      }),
-      el('div.rp-actions', {}, seeded ? [simulate, clear] : [simulate]),
     ])
   }
 

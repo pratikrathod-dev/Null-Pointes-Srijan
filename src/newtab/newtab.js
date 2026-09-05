@@ -18,9 +18,10 @@ import { readMimoConfig } from '../lib/mimo.js'
 import { timeAgo } from '../lib/news.js'
 import {
   readRoutineStore, updateRoutineStore, emptyRoutineStore, detectRoutineReport, nameRoutine, logAction,
-  inBand, isToday, hourLabel, simulationEvents, clearSimulation,
+  inBand, isToday, hourLabel, planDay, fileTabs,
   ROUTINE_MIN_DAYS, ROUTINE_EVENT_DAYS,
 } from '../lib/routines.js'
+import { readNewsCache } from '../lib/news.js'
 import { mountRoutinePanel } from './routinepanel.js'
 import { ask, confirmAction, dialog, dismissLayer, menu, closeMenu, dropdown } from '../lib/dialogs.js'
 import {
@@ -84,8 +85,7 @@ const $ = (id) => document.getElementById(id)
       run: runRoutine,
       skip: skipRoutineToday,
       forget: forgetRoutine,
-      simulate: simulateRoutine,
-      clearSimulation: clearRoutineSimulation,
+      runBuiltin,
       setTracking: setRoutineTracking,
     },
   })
@@ -186,7 +186,7 @@ function renderThemeButton() {
 // board, not Chrome's tabs.
 
 const ROUTINE_CHECK_MS = 60 * 1000
-const routineUi = { card: null, busy: false, snap: null, again: false }   // card: { routine, mode: 'offer' | 'run' }
+const routineUi = { card: null, busy: false, snap: null, again: false, busyBuiltin: null }   // card: { routine, mode: 'offer' | 'run' }
 
 async function refreshRoutines() {
   if (routineUi.busy) { routineUi.again = true; return }
@@ -206,7 +206,7 @@ async function refreshRoutines() {
         s.routines.push(found)
         logAction(s, {
           action: 'offer', routineId: found.id, name: found.name,
-          reason: `${found.kind === 'wrapup' ? 'closed' : 'opened'} together ${seen}: ${found.hosts.join(', ')}${found.sim ? ' (simulated)' : ''}`,
+          reason: `${found.kind === 'wrapup' ? 'closed' : 'opened'} together ${seen}: ${found.hosts.join(', ')}`,
         })
         return s
       })
@@ -215,7 +215,7 @@ async function refreshRoutines() {
       if (!(store.state.settings.sidebarView === 'routines' && !store.state.settings.sidebarCollapsed)) $('routines-dot').hidden = false
       nameRoutineWithMimo(found)
     }
-    routineUi.snap = { store: log, report, now }
+    routineUi.snap = { store: { ...log, busyBuiltin: routineUi.busyBuiltin }, report, now }
     routinePanel?.render(routineUi.snap)
 
     if (!log.tracking) { routineUi.card = null; renderRoutineCard(); return }
@@ -254,25 +254,134 @@ async function setRoutineTracking(on) {
   await refreshRoutines()
 }
 
-/** Seed the pretend morning and let the ordinary search find it. */
-async function simulateRoutine() {
-  await updateRoutineStore((s) => {
-    clearSimulation(s)
-    s.events.push(...simulationEvents())
-    logAction(s, { action: 'simulate', reason: 'seeded 3 bursts of 4 sites into the last hour (marked simulated)' })
-  })
-  toast('Simulated a morning — watching the search find it')
-  await refreshRoutines()
+// --------------------------------------------------------- built-in tasks
+
+/** The two routines every board ships with. Each is one complete task. */
+async function runBuiltin(b) {
+  if (routineUi.busyBuiltin) return
+  routineUi.busyBuiltin = b.id
+  routinePanel?.render(routineUi.snap && { ...routineUi.snap, store: { ...routineUi.snap.store, busyBuiltin: b.id } })
+  try {
+    if (b.kind === 'plan') await runPlanDay(b)
+    else if (b.kind === 'file') await runWrapUpAndFile(b)
+  } catch (err) {
+    toast(err?.message ?? 'That did not work')
+    await updateRoutineStore((s) => logAction(s, { action: 'error', routineId: b.id, name: b.name, reason: err?.message ?? 'unknown' }))
+  } finally {
+    routineUi.busyBuiltin = null
+    await refreshRoutines()
+  }
 }
 
-async function clearRoutineSimulation() {
-  await updateRoutineStore((s) => {
-    clearSimulation(s)
-    logAction(s, { action: 'sim-clear', reason: 'removed simulated events and routines' })
+function tabsForAi() {
+  return openTabs
+    .filter((t) => t.url && /^https?:/.test(t.url))
+    .map((t) => ({ id: t.id, title: t.title ?? '', host: hostnameOf(t.url), url: t.url, favicon: t.favIconUrl ?? '', pinned: t.pinned }))
+}
+
+/**
+ * Plan my day: MiMo writes 3-5 bullets from the open tabs, the folder names
+ * and the top news; the person sees the plan and chooses whether it goes on
+ * the board as a note. Undo removes the note.
+ */
+async function runPlanDay(b) {
+  const tabs = tabsForAi()
+  const space = currentSpace(store.state)
+  const folders = (space?.folders ?? []).map((f) => f.title)
+  const news = ((await readNewsCache('daily'))?.items ?? []).slice(0, 3).map((i) => i.title)
+  if (!tabs.length && !folders.length) return toast('Open a few tabs first — there is nothing to plan from')
+
+  toast('Writing today\'s plan…')
+  const { apiKey } = await readMimoConfig()
+  const plan = await planDay({ apiKey, tabs, folders, news })
+
+  const ok = await new Promise((resolve) => {
+    const done = (v) => { dismissLayer(); resolve(v) }
+    dialog({
+      title: plan.title,
+      subtitle: `From ${tabs.length} open tab${tabs.length === 1 ? '' : 's'}, ${folders.length} folder${folders.length === 1 ? '' : 's'}${news.length ? ' and the top news' : ''}.`,
+      body: el('ul.plan-list', {}, plan.bullets.map((t) => el('li', { text: t }))),
+      actions: [
+        { label: 'Cancel', onClick: () => done(false) },
+        { label: 'Put it on the board', tone: 'primary', onClick: () => done(true), autofocus: true },
+      ],
+      onEscape: () => done(false),
+    })
   })
-  if (routineUi.card?.routine.sim) routineUi.card = null
-  toast('Simulation cleared — real tracking untouched')
-  await refreshRoutines()
+  if (!ok) {
+    await updateRoutineStore((s) => logAction(s, { action: 'cancel', routineId: b.id, name: b.name, reason: 'declined the plan' }))
+    return
+  }
+  if (ui.search.trim() || ui.activeTags.size) { ui.search = ''; ui.activeTags.clear(); $('search').value = '' }
+  const spot = freeNoteSpot()
+  store.dispatch('addSticker', {
+    spaceId: space.id,
+    sticker: { ...spot, text: `${plan.title}\n${plan.bullets.map((t) => `• ${t}`).join('\n')}`, fontSize: 14 },
+  })
+  await markBuiltinRan(b, `wrote ${plan.bullets.length} bullets from ${tabs.length} tabs`)
+  toast('Plan added to the board', undoAction())
+}
+
+/**
+ * Wrap up and file: MiMo names a folder and summarises the open tabs; after
+ * the confirm, a folder with every tab and a summary note lands on the board
+ * and the tabs close. Undo puts the board back and reopens the tabs.
+ */
+async function runWrapUpAndFile(b) {
+  const tabs = tabsForAi().filter((t) => !t.pinned)
+  if (!tabs.length) return toast('Nothing open to file')
+  const space = currentSpace(store.state)
+  if (!space) return
+
+  toast(`Reading ${tabs.length} tab${tabs.length === 1 ? '' : 's'}…`)
+  const { apiKey } = await readMimoConfig()
+  const filed = await fileTabs({ apiKey, tabs, existingFolders: space.folders.map((f) => f.title) })
+
+  const ok = await confirmAction({
+    title: `File ${tabs.length} tab${tabs.length === 1 ? '' : 's'} into "${filed.folder}" and close them?`,
+    subtitle: filed.summary || tabs.map((t) => t.host).join(' · '),
+    confirmLabel: 'File and close',
+    tone: 'primary',
+  })
+  if (!ok) {
+    await updateRoutineStore((s) => logAction(s, { action: 'cancel', routineId: b.id, name: b.name, reason: `declined filing into "${filed.folder}"` }))
+    return
+  }
+
+  // One undoable step (the folder), the rest silent -- exactly how Stash all
+  // does it, so a single Undo takes the whole thing back.
+  const folderId = store.dispatch('addFolder', { spaceId: space.id, title: filed.folder })
+  let position = 1000
+  if (filed.summary) {
+    store.dispatch('addItem', { folderId, item: { type: 'note', title: filed.summary }, position }, { undoable: false })
+    position += 1000
+  }
+  for (const t of tabs) {
+    store.dispatch('addItem', {
+      folderId,
+      item: { type: 'bookmark', title: t.title, url: t.url, favicon: t.favicon, tags: filed.tags },
+      position,
+    }, { undoable: false })
+    position += 1000
+  }
+  const urls = tabs.map((t) => t.url)
+  await chrome.tabs.remove(tabs.map((t) => t.id)).catch(() => {})
+  await markBuiltinRan(b, `filed ${tabs.length} into "${filed.folder}" and closed them`)
+  toast(`Filed ${tabs.length} tab${tabs.length === 1 ? '' : 's'} into "${filed.folder}"`, {
+    label: 'Undo',
+    onClick: async () => {
+      store.undo()
+      for (const url of urls) await chrome.tabs.create({ url, active: false }).catch(() => {})
+      await updateRoutineStore((s) => logAction(s, { action: 'undo', routineId: b.id, name: b.name, reason: `removed "${filed.folder}" and reopened ${urls.length}` }))
+    },
+  })
+}
+
+async function markBuiltinRan(b, reason) {
+  await updateRoutineStore((s) => {
+    s.builtin[b.id] = { lastRunAt: Date.now() }
+    logAction(s, { action: 'run', routineId: b.id, name: b.name, reason })
+  })
 }
 
 /** Name the offer with MiMo when a key is present; the fallback name stays otherwise. */
@@ -338,7 +447,6 @@ function renderRoutineCard() {
   primary.addEventListener('click', () => (card.mode === 'offer' ? acceptRoutine(r) : runRoutine(r)))
   secondary.addEventListener('click', () => (card.mode === 'offer' ? declineRoutine(r) : skipRoutineToday(r)))
 
-  if (r.sim) kicker.append(el('span.rp-badge', { text: 'simulated', style: { marginLeft: '6px' } }))
   slot.replaceChildren(el('div.routine-card', {}, [
     kicker,
     el('div.routine-card__title', { text: r.name }),

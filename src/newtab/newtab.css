@@ -1095,6 +1095,10 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 }
 :root[data-theme='dark'] .rp-routine { background: color-mix(in srgb, var(--tint) 14%, var(--surface-container)); }
 .rp-routine--accepted { --tint: #8fdca4; }
+.rp-routine--ready { --tint: var(--routine-tint); }
+.rp-status--ready { text-transform: none; letter-spacing: 0; }
+.plan-list { margin: 4px 0 0; padding-left: 20px; font-size: 13.5px; line-height: 1.6; }
+.plan-list li { margin: 4px 0; }
 .rp-routine--declined { --tint: #c4c7c5; opacity: .8; }
 .rp-routine__top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .rp-routine__name { flex: 1; min-width: 0; font-size: 13px; font-weight: 650; }

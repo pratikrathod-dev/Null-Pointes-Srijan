@@ -43,7 +43,7 @@ const URL_MAX = 300
 // ================================================================ storage ===
 
 export function emptyRoutineStore() {
-  return { tracking: true, events: [], routines: [], log: [] }
+  return { tracking: true, events: [], routines: [], log: [], builtin: {} }
 }
 
 export async function readRoutineStore() {
@@ -56,6 +56,7 @@ export async function readRoutineStore() {
     events: Array.isArray(raw.events) ? raw.events : [],
     routines: Array.isArray(raw.routines) ? raw.routines : [],
     log: Array.isArray(raw.log) ? raw.log : [],
+    builtin: raw.builtin && typeof raw.builtin === 'object' ? raw.builtin : {},
   }
 }
 
@@ -306,15 +307,11 @@ function detectSessionCluster(events, span) {
       const url = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? `https://${host}/`
       return { host, hour: modeHour(occ.map((x) => x.start)), url, title }
     })
-    // Simulated only if every event *of these sites* was seeded; a real tab
-    // that happened to open in the same burst does not make it real.
-    const sim = occ.every((x) => x.events.filter((e) => names.includes(e.h)).every((e) => e.sim === true))
     return {
       members,
       days: [...new Set(occ.map((x) => dayKey(x.start)))].sort(),
       occurrences: occ.length,
       hour: modeHour(occ.map((x) => x.start)),
-      sim,
     }
   }
   return null
@@ -395,7 +392,6 @@ function makeRoutine(kind, cluster, span) {
     seen,
     span: span.id,
     byDay: span.byDay,
-    sim: cluster.sim === true,
     status: 'offered',
     signature: routineSignature(kind, hosts),
     createdAt: Date.now(),
@@ -428,40 +424,6 @@ export function inBand(routine, now = Date.now()) {
 
 export function isToday(t, now = Date.now()) {
   return t != null && dayKey(t) === dayKey(now)
-}
-
-// ============================================================== simulation ===
-
-// A pretend morning, so the whole offer -> confirm -> run -> undo flow can be
-// seen without waiting for a real habit to form. Every seeded event and any
-// routine learned from them is marked `sim`, so they can be cleared without
-// touching the real record, which keeps being written underneath.
-export const SIMULATION_SITES = [
-  { h: 'github.com', u: 'https://github.com/notifications', ti: 'Notifications - GitHub' },
-  { h: 'mail.google.com', u: 'https://mail.google.com/mail/u/0/#inbox', ti: 'Inbox - Gmail' },
-  { h: 'notion.so', u: 'https://www.notion.so/', ti: 'Team workspace - Notion' },
-  { h: 'calendar.google.com', u: 'https://calendar.google.com/calendar/u/0/r', ti: 'Google Calendar' },
-]
-
-/** Three bursts of the simulation sites inside the last hour. */
-export function simulationEvents(now = Date.now()) {
-  const out = []
-  for (const minutesAgo of [52, 31, 9]) {
-    SIMULATION_SITES.forEach((site, i) => {
-      out.push({ t: now - minutesAgo * 60 * 1000 + i * 45 * 1000, k: 'open', h: site.h, ti: site.ti, u: site.u, sim: true })
-    })
-  }
-  return out
-}
-
-export function hasSimulation(store) {
-  return store.events.some((e) => e.sim) || store.routines.some((r) => r.sim)
-}
-
-export function clearSimulation(store) {
-  store.events = store.events.filter((e) => !e.sim)
-  store.routines = store.routines.filter((r) => !r.sim)
-  return store
 }
 
 // =================================================================== MiMo ===
@@ -504,4 +466,102 @@ export async function nameRoutine({ apiKey, routine, signal }) {
   const description = String(parsed?.description ?? '').trim().slice(0, 120)
   if (!name) throw new Error('MiMo did not return a name.')
   return { name, description }
+}
+
+// ======================================================= built-in routines ===
+
+// Two routines every board starts with. They are real tasks, not patterns:
+// each one takes what is open right now, asks MiMo for the judgement a script
+// cannot make (a name, a plan, a summary), and then -- after the person
+// confirms -- changes the board and the tabs. Both are undoable.
+export const BUILT_IN_ROUTINES = [
+  {
+    id: 'builtin-plan',
+    kind: 'plan',
+    name: 'Plan my day',
+    description: 'Writes today\'s plan as a note on the board, from what you have open, your folders and the top AI news.',
+    action: 'Write the plan',
+  },
+  {
+    id: 'builtin-file',
+    kind: 'file',
+    name: 'Wrap up and file',
+    description: 'Names a folder for what you have open, files every tab into it with a one-line summary, then closes them.',
+    action: 'File and close',
+  },
+]
+
+/**
+ * A short plan for today. Crosses the wire: open-tab titles and hosts, folder
+ * names on the board, and up to three news headlines -- no URLs, no content.
+ * @returns {Promise<{title: string, bullets: string[]}>}
+ */
+export async function planDay({ apiKey, tabs, folders, news, signal }) {
+  const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+  const user = [
+    `It is ${today}. Write a short plan for the day for the person whose browser looks like this.`,
+    '',
+    `Open tabs (${tabs.length}): ${JSON.stringify(tabs.map((t) => ({ title: (t.title ?? '').slice(0, 80), site: t.host })))}`,
+    `Folders on their board: ${JSON.stringify(folders.slice(0, 20))}`,
+    news.length ? `Top AI/tech news right now: ${JSON.stringify(news.slice(0, 3))}` : '',
+    '',
+    'Rules: 3 to 5 bullets, each at most 90 characters, concrete and specific to what is actually open -- name the tab or site. Put the most unfinished-looking thing first. If a news item is clearly relevant to their open work, one bullet may mention it; otherwise leave news out. No greetings, no motivation, no emoji.',
+    'Reply with JSON only: {"title":"<at most 40 chars, e.g. Today: finish the hostel form>","bullets":["...","..."]}',
+  ].filter(Boolean).join('\n')
+
+  const { text } = await mimoChat({
+    apiKey,
+    messages: [
+      { role: 'system', content: 'You are a terse, practical planner. You only plan from what you are shown and never invent tasks.' },
+      { role: 'user', content: user },
+    ],
+    json: true,
+    temperature: 0.3,
+    maxTokens: 400,
+    signal,
+  })
+  const parsed = parseJsonReply(text)
+  const bullets = (Array.isArray(parsed?.bullets) ? parsed.bullets : [])
+    .map((b) => String(b ?? '').trim()).filter(Boolean).slice(0, 5)
+  const title = String(parsed?.title ?? '').trim().slice(0, 40) || 'Today'
+  if (!bullets.length) throw new Error('MiMo did not return a plan.')
+  return { title, bullets }
+}
+
+/**
+ * A folder name, a summary and tags for a set of open tabs. Crosses the wire:
+ * titles and hosts only.
+ * @returns {Promise<{folder: string, summary: string, tags: string[]}>}
+ */
+export async function fileTabs({ apiKey, tabs, existingFolders = [], signal }) {
+  const user = [
+    `A person is wrapping up and wants these ${tabs.length} open tabs filed away together so they can pick the work up later.`,
+    '',
+    JSON.stringify(tabs.map((t) => ({ title: (t.title ?? '').slice(0, 80), site: t.host }))),
+    '',
+    existingFolders.length ? `Folders that already exist on their board (do not reuse these names): ${JSON.stringify(existingFolders.slice(0, 30))}` : '',
+    '',
+    'Give: "folder" -- a specific folder name for this set, at most 32 characters, no quotes, describing the work not the sites (e.g. "Hostel application research", not "Chrome tabs"); "summary" -- one or two plain sentences, at most 200 characters, saying what they were doing and what looks unfinished, using only what the titles show; "tags" -- 1 to 3 short lowercase tags.',
+    'Reply with JSON only: {"folder":"...","summary":"...","tags":["..."]}',
+  ].filter(Boolean).join('\n')
+
+  const { text } = await mimoChat({
+    apiKey,
+    messages: [
+      { role: 'system', content: 'You file browser tabs for people. You are specific, brief, and never invent details that are not in the titles.' },
+      { role: 'user', content: user },
+    ],
+    json: true,
+    temperature: 0.3,
+    maxTokens: 300,
+    signal,
+  })
+  const parsed = parseJsonReply(text)
+  const folder = String(parsed?.folder ?? '').trim().replace(/^["']|["']$/g, '').slice(0, 32)
+  const summary = String(parsed?.summary ?? '').trim().slice(0, 220)
+  const tags = (Array.isArray(parsed?.tags) ? parsed.tags : [])
+    .map((t) => String(t ?? '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, ''))
+    .filter(Boolean).slice(0, 3)
+  if (!folder) throw new Error('MiMo did not return a folder name.')
+  return { folder, summary, tags }
 }

@@ -80,16 +80,26 @@ Web Search plugin enabled in the MiMo console.
 
 ## Learned routines
 
-Tabspace notices sites you open together — or close together — and offers a
-one-tap version of it. The search starts with the last hour (the same sites
-together three separate times) and widens through 6 hours, 24 hours, 7 days and
-30 days until something repeats; the long windows need the same hour on three
-different days. The offer appears at the top of **Open tabs**, and the whole
-system is on show in the **Routines** view of the sidebar: the live feed of tab
+The **Routines** view of the sidebar holds two kinds of routine.
+
+**Two that every board ships with**, each a complete task done with MiMo:
+
+- **Plan my day** — reads the titles of your open tabs, your folder names and
+  the top AI news, writes a 3–5 bullet plan for today, shows it to you, and on
+  your say-so puts it on the board as a note.
+- **Wrap up and file** — names a folder for what you have open, writes a one-
+  line summary of what you were doing and what looks unfinished, files every
+  open tab into that folder with the note and tags, then closes the tabs. One
+  Undo removes the folder and reopens everything.
+
+**Learned ones.** Tabspace notices sites you open together — or close
+together — and offers a one-tap version of it. The search starts with the last
+hour (the same sites together three separate times) and widens through 6
+hours, 24 hours, 7 days and 30 days until something repeats; the long windows
+need the same hour on three different days. The offer appears at the top of
+**Open tabs** and in the Routines view, which also shows the live feed of tab
 events as the service worker records them, the window-by-window search, every
-routine with its status, a **Simulate a morning** button that seeds a pretend
-hour and lets the same detector find it (everything it produces is marked
-simulated and can be cleared), and the activity log.
+routine with its status, and the activity log.
 
 It only ever offers: nothing opens or closes without a confirm dialog, every
 run gets a toast with **Undo** that reverses the browser action, and every
@@ -143,7 +153,7 @@ src/
     supabase-sync.js   email + code sign-in, the recommended backend
     mimo.js            Xiaomi MiMo client; the key lives in local storage only
     news.js            feed fetching, MiMo ranking, and the news cache
-    routines.js        learned routines: tab record, detection, naming, simulation, log
+    routines.js        routines: tab record, detection, naming, the two built-in tasks, log
     supabase-config.js the two values you paste in
   newtab/              the board (newtab override)
   sidepanel/           vertical tab strip + saved folders, in Chrome's side panel
