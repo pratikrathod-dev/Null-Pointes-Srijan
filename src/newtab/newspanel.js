@@ -345,6 +345,12 @@ export function mimoSettingRows({ config, settingRow, toggleControl, toast, onKe
         await writeMimoConfig({ webSearch: v })
       })),
 
+    settingRow('Auto-tag bookmarks',
+      'When you save a tab, MiMo generates 3–5 tags automatically. Tags appear on the bookmark after a short delay. Requires a MiMo API key.',
+      toggleControl(config.autoTag !== false, async (v) => {
+        await writeMimoConfig({ autoTag: v })
+      })),
+
     settingRow('News sources',
       `Fourteen feeds, fetched straight from the publisher so every story has a real link: ${sourceNames}. MiMo only ranks and summarises; it never adds a story that is not in a feed or a citation.`,
       (() => {
